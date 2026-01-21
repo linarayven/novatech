@@ -1,10 +1,16 @@
 @import "tailwindcss";
 
+/* ===== Основные переменные палитры ===== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Светлая тема */
+  --background: #c9d1c8;   /* Туман — фон страницы */
+  --foreground: #04202c;   /* Лес — основной текст */
+  --primary: #304040;      /* Вечно-зеленый — активные кнопки, акценты */
+  --secondary: #5b7065;    /* Сосна — неактивные кнопки */
+  --card-bg: #ffffff;      /* Фон карточек товаров */
 }
 
+/* Поддержка Tailwind variables */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -12,15 +18,119 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ===== Тёмная тема ===== */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #04202c; /* Лес — фон страницы */
+    --foreground: #c9d1c8; /* Туман — текст */
+    --primary: #5b7065;    /* Сосна — активные кнопки */
+    --secondary: #304040;  /* Вечно-зеленый — неактивные кнопки */
+    --card-bg: #304040;    /* Фон карточек */
   }
 }
 
+/* ===== Базовые стили ===== */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== Кнопки ===== */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ===== Ссылки ===== */
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--secondary);
+}
+
+/* ===== Инпуты ===== */
+input, textarea {
+  font-family: inherit;
+  border: 1px solid var(--secondary);
+  background-color: var(--card-bg);
+  color: var(--foreground);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--primary);
+}
+
+/* ===== Карточки товаров ===== */
+.card {
+  background-color: var(--card-bg);
+  color: var(--foreground);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* ===== Баннер ===== */
+.banner {
+  background-color: var(--primary);
+  color: white;
+  font-weight: 800;
+  text-align: center;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* ===== Категории ===== */
+.category-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.category-btn.active {
+  background-color: var(--primary);
+  color: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.category-btn.inactive {
+  background-color: var(--secondary);
+  color: white;
+}
+
+.category-btn.inactive:hover {
+  background-color: var(--primary);
+}
+
+/* ===== Кнопка корзины ===== */
+.add-to-cart-btn {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  width: 100%;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.add-to-cart-btn:hover {
+  background-color: var(--secondary);
 }
