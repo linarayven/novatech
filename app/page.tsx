@@ -13,8 +13,11 @@ interface Product {
   price: number;
   category: string;
   brand?: string;
+  sub_category?: string;
   description?: string;
-  image?: string;
+  image_url?: string;
+  specs?: Record<string, any>;
+  created_at?: string;
 }
 
 export default function Home() {
@@ -71,7 +74,7 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  // Отримання доступних підкатегорій (брендів) для обраної категорії
+  // Отримання доступних брендів для обраної категорії
   const subCategories = useMemo(() => {
     if (!category) return [];
     return Array.from(new Set(products.filter(p => p.category === category).map(p => p.brand)))
@@ -490,9 +493,9 @@ export default function Home() {
               key={product.id}
               className="product-card"
             >
-              {product.image && !loadedImages.has(product.id) ? (
+              {product.image_url && !loadedImages.has(product.id) ? (
                 <Image
-                  src={product.image}
+                  src={product.image_url}
                   alt={product.title}
                   width={300}
                   height={200}
@@ -524,7 +527,7 @@ export default function Home() {
         <div className="cart-modal-overlay" onClick={() => setShowCart(false)}>
           <div className="cart-modal" onClick={(e) => e.stopPropagation()}>
             <div className="cart-header">
-              <h2>Ваша корзина</h2>
+              <h2>Ваш кошик</h2>
               <button 
                 onClick={() => setShowCart(false)}
                 style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
@@ -534,10 +537,10 @@ export default function Home() {
             </div>
 
             {cartItems.length === 0 ? (
-              <p className="empty-state">Корзина пуста</p>
+              <p className="empty-state">Кошик пустий</p>
             ) : (
               <div className="cart-content">
-                {/* Товари в корзині */}
+                {/* Товари в кошику */}
                 <div className="cart-items">
                   {cartItems.map((item) => (
                     <div key={item.id} className="cart-item">
@@ -565,7 +568,7 @@ export default function Home() {
                           onClick={() => removeFromCart(item.id)}
                           className="cart-remove-btn"
                         >
-                          Видалити
+                          Видалити з кошика
                         </button>
                       </div>
                     </div>

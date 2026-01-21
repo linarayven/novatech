@@ -4,8 +4,11 @@ export interface Category {
 }
 
 export const CATEGORIES: Category[] = [
-  { name: "laptops", label: "Ноутбуки" },
-  { name: "phones", label: "Телефони" },
-  { name: "tv", label: "TV" },
-  { name: "accessories", label: "Аксесуари" },
+  { name: "ноутбуки", label: "Ноутбуки" },
+  { name: "телефони", label: "Телефони" },
+  { name: "телевізори", label: "Телевізори" },
+  { name: "планшети", label: "Планшети" },
+  { name: "аксесуари", label: "Аксесуари" },
+  { name: "монітори", label: "Монітори" },
+  { name: "периферія", label: "Периферія" },
 ];
