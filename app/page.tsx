@@ -36,6 +36,22 @@ export default function Home() {
   const [email, setEmail] = useState<string>("");
   const [paymentCategory, setPaymentCategory] = useState<string>("on_delivery");
   const [paymentMethod, setPaymentMethod] = useState<string>("card");
+  
+  // Поля получателя
+  const [recipient, setRecipient] = useState({
+    lastName: "",
+    firstName: "",
+    patronymic: "",
+    phone: "+38 "
+  });
+
+  // Ошибки валидации
+  const [errors, setErrors] = useState({
+    email: "",
+    phone: "",
+    lastName: "",
+    firstName: ""
+  });
 
   // ==================== Загрузка продуктів ====================
   useEffect(() => {
@@ -76,14 +92,14 @@ export default function Home() {
 
   useEffect(() => {
     if (!debouncedSearchText) {
-      setSuggestions([]);
+      setTimeout(() => setSuggestions([]), 0);
       return;
     }
 
     const filtered = products
       .filter((p) => p.title.toLowerCase().includes(debouncedSearchText.toLowerCase()))
       .slice(0, 5);
-    setSuggestions(filtered);
+    setTimeout(() => setSuggestions(filtered), 0);
   }, [debouncedSearchText, products]);
 
   // ==================== Функції ====================
@@ -177,10 +193,175 @@ export default function Home() {
   const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  // ==================== Валидація ====================
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    const digitsOnly = phone.replace(/\D/g, '');
+    return digitsOnly.length >= 10;
+  };
+
+  const handleEmailChange = (value: string) => {
+    // Фильтруем только допустимые символы для email на английском
+    const filtered = value.replace(/[^a-zA-Z0-9@._\-+]/g, '');
+    
+    setEmail(filtered);
+    if (filtered && !validateEmail(filtered)) {
+      setErrors(prev => ({ ...prev, email: "Введіть дійсну поштову адресу" }));
+    } else {
+      setErrors(prev => ({ ...prev, email: "" }));
+    }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    // Если пришло пустое значение, устанавливаем +38
+    if (!value || value === '') {
+      setRecipient(prev => ({ ...prev, phone: '+38 ' }));
+      return;
+    }
+    
+    // Если значение начинается не с +38, это ошибка
+    if (!value.startsWith('+38')) {
+      return;
+    }
+    
+    // Фильтруем только цифры
+    let digitsOnly = value.replace(/\D/g, '');
+    
+    // Берём максимум 12 цифр (38 + 10 цифр номера)
+    const limited = digitsOnly.slice(0, 12);
+    
+    // Форматируем: +38 0XX XXX XX XX
+    let formatted = '+38';
+    if (limited.length > 2) {
+      formatted += ' ' + limited.slice(2, 5);
+    }
+    if (limited.length > 5) {
+      formatted += ' ' + limited.slice(5, 8);
+    }
+    if (limited.length > 8) {
+      formatted += ' ' + limited.slice(8, 10);
+    }
+    if (limited.length > 10) {
+      formatted += ' ' + limited.slice(10, 12);
+    }
+    
+    setRecipient(prev => ({ ...prev, phone: formatted }));
+    
+    if (limited.length === 12 && !validatePhone(formatted)) {
+      setErrors(prev => ({ ...prev, phone: "Введіть дійсний номер мобільного телефону отримувача" }));
+    } else if (limited.length === 12) {
+      setErrors(prev => ({ ...prev, phone: "" }));
+    }
+  };
+
+  const handleLastNameChange = (value: string) => {
+    // Только буквы, апострофы и пробелы
+    const filtered = value.replace(/[^а-яА-ЯіІєЄґҐ'ʼ\s-]/g, '');
+    const limited = filtered.slice(0, 50);
+    
+    setRecipient(prev => ({ ...prev, lastName: limited }));
+    if (limited.trim()) {
+      setErrors(prev => ({ ...prev, lastName: "" }));
+    }
+  };
+
+  const handleFirstNameChange = (value: string) => {
+    // Только буквы, апострофы и пробелы
+    const filtered = value.replace(/[^а-яА-ЯіІєЄґҐ'ʼ\s-]/g, '');
+    const limited = filtered.slice(0, 50);
+    
+    setRecipient(prev => ({ ...prev, firstName: limited }));
+    if (limited.trim()) {
+      setErrors(prev => ({ ...prev, firstName: "" }));
+    }
+  };
+
+  // Финальная валидация перед отправкой
+  const validateForm = (): boolean => {
+    const newErrors = {
+      email: "",
+      phone: "",
+      lastName: "",
+      firstName: ""
+    };
+
+    // Проверка email
+    if (!email.trim()) {
+      newErrors.email = "Поле Email обов'язкове";
+    } else if (!validateEmail(email)) {
+      newErrors.email = "Введіть дійсну поштову адресу";
+    }
+
+    // Проверка телефона
+    if (!recipient.phone.trim()) {
+      newErrors.phone = "Поле телефон обов'язкове";
+    } else if (!validatePhone(recipient.phone)) {
+      newErrors.phone = "Введіть дійсний номер мобільного телефону отримувача (мінімум 10 цифр)";
+    }
+
+    // Проверка прізвища
+    if (!recipient.lastName.trim()) {
+      newErrors.lastName = "Введіть прізвище отримувача";
+    }
+
+    // Проверка імені
+    if (!recipient.firstName.trim()) {
+      newErrors.firstName = "Введіть ім'я отримувача";
+    }
+
+    setErrors(newErrors);
+    return Object.values(newErrors).every(err => err === "");
+  };
+
+  const handleCheckout = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      // Здесь идет логика отправки заказа
+      console.log("Заказ готов к отправке", {
+        email,
+        recipient,
+        paymentCategory,
+        paymentMethod,
+        cartItems,
+        totalPrice
+      });
+
+      // Пример отправки на сервер:
+      // const { data, error } = await supabase.from("orders").insert({
+      //   email,
+      //   recipient,
+      //   paymentCategory,
+      //   paymentMethod,
+      //   items: cartItems,
+      //   totalPrice,
+      //   createdAt: new Date()
+      // });
+
+      // if (error) {
+      //   console.error("Ошибка при оформлении заказа:", error);
+      //   return;
+      // }
+
+      alert("Заказ успешно оформлен!");
+      setShowCart(false);
+      setCartItems([]);
+      setEmail("");
+      setRecipient({ lastName: "", firstName: "", patronymic: "", phone: "+38 " });
+    } catch (err) {
+      console.error("Ошибка:", err);
+    }
+  };
+
   // ==================== JSX ====================
   return (
-    <>
-      <div className="page-container">
+    <div className="page-wrapper">
       {/* ====== Хедер ====== */}
       <header className="header">
         {/* NovaTech */}
@@ -277,9 +458,9 @@ export default function Home() {
       </header>
 
       {/* ==================== Основний контент ==================== */}
-      <div style={{ display: 'flex', gap: '1.5rem', padding: '1rem' }}>
-        {/* ====== Бокова панель ====== */}
-        <aside style={{ width: '16rem', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '1.5rem', padding: '1rem' }}>
+          {/* ====== Бокова панель ====== */}
+          <aside style={{ width: '16rem', flexShrink: 0 }}>
           {/* Breadcrumbs */}
           <div className="breadcrumb">
             <button className="breadcrumb-btn" onClick={() => { resetFilters(); router.push("/"); }}>🏠</button>
@@ -365,7 +546,6 @@ export default function Home() {
           ))}
         </main>
       </div>
-      </div>
 
       {/* ==================== МОДАЛ КОРЗИНИ ==================== */}
       {showCart && (
@@ -422,22 +602,88 @@ export default function Home() {
 
                 {/* Форма платежу */}
                 <div className="cart-form">
+                  {/* Email */}
                   <div className="form-group">
                     <label>Email:</label>
                     <input
                       type="email"
                       placeholder="your@email.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => handleEmailChange(e.target.value)}
+                      maxLength={100}
                       className="form-input"
+                      style={{ borderColor: errors.email ? '#dc2626' : 'initial' }}
                     />
+                    {errors.email && <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>{errors.email}</p>}
                   </div>
 
+                  {/* Дані отримувача */}
                   <div className="form-group">
-                    <label><strong>Оплата</strong></label>
+                    <label><strong>Отримувач</strong></label>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Прізвище"
+                          value={recipient.lastName}
+                          onChange={(e) => handleLastNameChange(e.target.value)}
+                          maxLength={50}
+                          className="form-input"
+                          style={{ borderColor: errors.lastName ? '#dc2626' : 'initial' }}
+                        />
+                        {errors.lastName && <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>{errors.lastName}</p>}
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Ім'я"
+                          value={recipient.firstName}
+                          onChange={(e) => handleFirstNameChange(e.target.value)}
+                          maxLength={50}
+                          className="form-input"
+                          style={{ borderColor: errors.firstName ? '#dc2626' : 'initial' }}
+                        />
+                        {errors.firstName && <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>{errors.firstName}</p>}
+                      </div>
+                    </div>
+                    
+                    <input
+                      type="text"
+                      placeholder="По батькові"
+                      value={recipient.patronymic}
+                      onChange={(e) => setRecipient(prev => ({ ...prev, patronymic: e.target.value }))}
+                      maxLength={50}
+                      className="form-input"
+                      style={{ marginTop: '0.5rem' }}
+                    />
+                    
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="+38 0__ ___ __ __"
+                      value={recipient.phone}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      maxLength={17}
+                      className="form-input"
+                      style={{ 
+                        marginTop: '0.5rem', 
+                        borderColor: errors.phone ? '#dc2626' : 'initial',
+                        color: '#000',
+                        fontSize: '1rem'
+                      }}
+                    />
+                    {errors.phone && <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>{errors.phone}</p>}
+                  </div>
+
+                  {/* Способ оплаты */}
+                  <div className="form-group" style={{ marginTop: '1rem' }}>
+                    <label style={{ marginBottom: '0.75rem', display: 'block' }}><strong>Оплата</strong></label>
                     
                     {/* Категорія 1: Оплата під час отримання */}
-                    <div className="payment-option">
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '0.75rem', cursor: 'pointer', borderRight: paymentCategory === "on_delivery" ? '3px solid #dc2626' : 'none' }}
+                      onClick={() => setPaymentCategory("on_delivery")}
+                    >
                       <input
                         type="radio"
                         id="delivery"
@@ -445,72 +691,81 @@ export default function Home() {
                         value="on_delivery"
                         checked={paymentCategory === "on_delivery"}
                         onChange={(e) => setPaymentCategory(e.target.value)}
+                        style={{ marginTop: '0.25rem', flexShrink: 0 }}
                       />
-                      <label htmlFor="delivery">Оплата під час отримання товару</label>
+                      <label htmlFor="delivery" style={{ margin: 0, cursor: 'pointer' }}>Оплата під час отримання товару</label>
                     </div>
 
                     {/* Категорія 2: Оплатити зараз */}
-                    <div className="payment-option">
-                      <input
-                        type="radio"
-                        id="pay_now"
-                        name="payment_category"
-                        value="pay_now"
-                        checked={paymentCategory === "pay_now"}
-                        onChange={(e) => setPaymentCategory(e.target.value)}
-                      />
-                      <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '1.5rem' }}>
-                        <label htmlFor="pay_now"><strong>Оплата карткою</strong></label>
-
-                        {paymentCategory === "pay_now" && (
-                          <div className="payment-methods" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.25rem' }}>
-                            <label>
-                              <input
-                                type="radio"
-                                name="payment_method"
-                                value="card"
-                                checked={paymentMethod === "card"}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
-                              />
-                              Картою
-                            </label>
-                            <label>
-                              <input
-                                type="radio"
-                                name="payment_method"
-                                value="google_pay"
-                                checked={paymentMethod === "google_pay"}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
-                              />
-                              Google Pay
-                            </label>
-                            <label>
-                              <input
-                                type="radio"
-                                name="payment_method"
-                                value="apple_pay"
-                                checked={paymentMethod === "apple_pay"}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
-                              />
-                              Apple Pay
-                            </label>
-                          </div>
-                        )}
+                    <div style={{ border: '1px solid #ddd', borderRadius: '4px', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', cursor: 'pointer', borderRight: paymentCategory === "pay_now" ? '3px solid #dc2626' : 'none' }}
+                        onClick={() => setPaymentCategory("pay_now")}
+                      >
+                        <input
+                          type="radio"
+                          id="pay_now"
+                          name="payment_category"
+                          value="pay_now"
+                          checked={paymentCategory === "pay_now"}
+                          onChange={(e) => setPaymentCategory(e.target.value)}
+                          style={{ marginTop: '0.25rem', flexShrink: 0 }}
+                        />
+                        <label htmlFor="pay_now" style={{ margin: 0, cursor: 'pointer' }}><strong>Оплата карткою</strong></label>
                       </div>
+
+                      {paymentCategory === "pay_now" && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', paddingLeft: '1.5rem', borderTop: '1px solid #ddd' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, cursor: 'pointer' }}>
+                            <input
+                              type="radio"
+                              name="payment_method"
+                              value="card"
+                              checked={paymentMethod === "card"}
+                              onChange={(e) => setPaymentMethod(e.target.value)}
+                            />
+                            Картою
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, cursor: 'pointer' }}>
+                            <input
+                              type="radio"
+                              name="payment_method"
+                              value="google_pay"
+                              checked={paymentMethod === "google_pay"}
+                              onChange={(e) => setPaymentMethod(e.target.value)}
+                            />
+                            Google Pay
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, cursor: 'pointer' }}>
+                            <input
+                              type="radio"
+                              name="payment_method"
+                              value="apple_pay"
+                              checked={paymentMethod === "apple_pay"}
+                              onChange={(e) => setPaymentMethod(e.target.value)}
+                            />
+                            Apple Pay
+                          </label>
+                        </div>
+                      )}
                     </div>
 
                     {/* Категорія 3: Кредит та оплата частинами */}
-                    <div className="payment-option">
-                      <input
-                        type="radio"
-                        id="credit"
-                        name="payment_category"
-                        value="credit"
-                        checked={paymentCategory === "credit"}
-                        onChange={(e) => setPaymentCategory(e.target.value)}
-                      />
-                      <label htmlFor="credit">Кредит та оплата частинами</label>
-                      <p style={{ fontSize: '0.85rem', color: '#666', margin: '0.5rem 0 0 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', flexDirection: 'column', borderRight: paymentCategory === "credit" ? '3px solid #dc2626' : 'none' }}
+                      onClick={() => setPaymentCategory("credit")}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                        <input
+                          type="radio"
+                          id="credit"
+                          name="payment_category"
+                          value="credit"
+                          checked={paymentCategory === "credit"}
+                          onChange={(e) => setPaymentCategory(e.target.value)}
+                          style={{ marginTop: '0.25rem', flexShrink: 0 }}
+                        />
+                        <label htmlFor="credit" style={{ margin: 0, cursor: 'pointer' }}>Кредит та оплата частинами</label>
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: '#666', margin: 0, marginLeft: '1.75rem' }}>
                         Оформлення кредитів у банках партнерів
                       </p>
                     </div>
@@ -523,12 +778,17 @@ export default function Home() {
             {cartItems.length > 0 && (
               <div className="cart-total">
                 <p><strong>Всього: {formatPrice(totalPrice)}</strong></p>
-                <button className="checkout-btn">Оформити замовлення</button>
+                <button 
+                  className="checkout-btn"
+                  onClick={handleCheckout}
+                >
+                  Оформити замовлення
+                </button>
               </div>
             )}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
