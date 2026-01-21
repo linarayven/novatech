@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CATEGORIES } from "@/lib/constants";
+import { supabase } from "../src/lib/supabase";
+import { CATEGORIES } from "../src/lib/constants";
+
 
 // Типи
 interface Product {
@@ -228,7 +229,7 @@ export default function Home() {
       return;
     }
     
-    let digitsOnly = value.replace(/\D/g, '');
+    const digitsOnly = value.replace(/\D/g, '');
     const limited = digitsOnly.slice(0, 12);
     
     let formatted = '+38';
