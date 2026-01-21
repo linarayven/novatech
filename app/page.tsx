@@ -31,6 +31,11 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [cartItems, setCartItems] = useState<(Product & { quantity: number })[]>([]);
+  const [showCart, setShowCart] = useState<boolean>(false);
+  const [email, setEmail] = useState<string>("");
+  const [paymentCategory, setPaymentCategory] = useState<string>("on_delivery");
+  const [paymentMethod, setPaymentMethod] = useState<string>("card");
 
   // ==================== Загрузка продуктів ====================
   useEffect(() => {
@@ -136,9 +141,46 @@ export default function Home() {
     });
   };
 
+  // ==================== Логика Корзини ====================
+  const addToCart = useCallback((product: Product) => {
+    setCartItems(prev => {
+      const existingItem = prev.find(item => item.id === product.id);
+      if (existingItem) {
+        return prev.map(item =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
+  }, []);
+
+  const removeFromCart = useCallback((productId: string) => {
+    setCartItems(prev => prev.filter(item => item.id !== productId));
+  }, []);
+
+  const updateQuantity = useCallback((productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+    } else {
+      setCartItems(prev =>
+        prev.map(item =>
+          item.id === productId
+            ? { ...item, quantity }
+            : item
+        )
+      );
+    }
+  }, [removeFromCart]);
+
+  const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
   // ==================== JSX ====================
   return (
-    <div className="page-container">
+    <>
+      <div className="page-container">
       {/* ====== Хедер ====== */}
       <header className="header">
         {/* NovaTech */}
@@ -174,7 +216,7 @@ export default function Home() {
               🔍
             </button>
 
-            {/* Автоподсказки */}
+            {/* Автопропозиції */}
             {suggestions.length > 0 && (
               <div className="suggestions-dropdown">
                 {suggestions.map((s) => (
@@ -207,8 +249,29 @@ export default function Home() {
           <button
             aria-label="Корзина"
             className="icon-btn"
+            onClick={() => setShowCart(!showCart)}
+            style={{ position: 'relative' }}
           >
             🛒
+            {totalItems > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-5px',
+                right: '-5px',
+                background: 'var(--color-primary)',
+                color: 'white',
+                borderRadius: '50%',
+                width: '20px',
+                height: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.75rem',
+                fontWeight: 'bold'
+              }}>
+                {totalItems}
+              </span>
+            )}
           </button>
         </div>
       </header>
@@ -292,11 +355,180 @@ export default function Home() {
               <p className="product-price">Ціна: {formatPrice(product.price)}</p>
               <p className="product-category">Категорія: {product.category}</p>
               {product.brand && <p className="product-brand">Бренд: {product.brand}</p>}
-              <button className="add-to-cart-btn">Додати в корзину</button>
+              <button 
+                className="add-to-cart-btn"
+                onClick={() => addToCart(product)}
+              >
+                Додати в корзину
+              </button>
             </div>
           ))}
         </main>
       </div>
-    </div>
+      </div>
+
+      {/* ==================== МОДАЛ КОРЗИНИ ==================== */}
+      {showCart && (
+        <div className="cart-modal-overlay" onClick={() => setShowCart(false)}>
+          <div className="cart-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="cart-header">
+              <h2>Ваша корзина</h2>
+              <button 
+                onClick={() => setShowCart(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {cartItems.length === 0 ? (
+              <p className="empty-state">Корзина пуста</p>
+            ) : (
+              <div className="cart-content">
+                {/* Список товарів */}
+                <div className="cart-items">
+                  {cartItems.map((item) => (
+                    <div key={item.id} className="cart-item">
+                      <div>
+                        <p className="cart-item-title">{item.title}</p>
+                        <p className="cart-item-price">
+                          {formatPrice(item.price)} x {item.quantity}
+                        </p>
+                      </div>
+                      <div className="cart-item-controls">
+                        <button 
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          className="cart-qty-btn"
+                        >
+                          −
+                        </button>
+                        <span>{item.quantity}</span>
+                        <button 
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          className="cart-qty-btn"
+                        >
+                          +
+                        </button>
+                        <button 
+                          onClick={() => removeFromCart(item.id)}
+                          className="cart-remove-btn"
+                        >
+                          Видалити
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Форма платежу */}
+                <div className="cart-form">
+                  <div className="form-group">
+                    <label>Email:</label>
+                    <input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label><strong>Оплата</strong></label>
+                    
+                    {/* Категорія 1: Оплата під час отримання */}
+                    <div className="payment-option">
+                      <input
+                        type="radio"
+                        id="delivery"
+                        name="payment_category"
+                        value="on_delivery"
+                        checked={paymentCategory === "on_delivery"}
+                        onChange={(e) => setPaymentCategory(e.target.value)}
+                      />
+                      <label htmlFor="delivery">Оплата під час отримання товару</label>
+                    </div>
+
+                    {/* Категорія 2: Оплатити зараз */}
+                    <div className="payment-option">
+                      <input
+                        type="radio"
+                        id="pay_now"
+                        name="payment_category"
+                        value="pay_now"
+                        checked={paymentCategory === "pay_now"}
+                        onChange={(e) => setPaymentCategory(e.target.value)}
+                      />
+                      <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '1.5rem' }}>
+                        <label htmlFor="pay_now"><strong>Оплата карткою</strong></label>
+
+                        {paymentCategory === "pay_now" && (
+                          <div className="payment-methods" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.25rem' }}>
+                            <label>
+                              <input
+                                type="radio"
+                                name="payment_method"
+                                value="card"
+                                checked={paymentMethod === "card"}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
+                              />
+                              Картою
+                            </label>
+                            <label>
+                              <input
+                                type="radio"
+                                name="payment_method"
+                                value="google_pay"
+                                checked={paymentMethod === "google_pay"}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
+                              />
+                              Google Pay
+                            </label>
+                            <label>
+                              <input
+                                type="radio"
+                                name="payment_method"
+                                value="apple_pay"
+                                checked={paymentMethod === "apple_pay"}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
+                              />
+                              Apple Pay
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Категорія 3: Кредит та оплата частинами */}
+                    <div className="payment-option">
+                      <input
+                        type="radio"
+                        id="credit"
+                        name="payment_category"
+                        value="credit"
+                        checked={paymentCategory === "credit"}
+                        onChange={(e) => setPaymentCategory(e.target.value)}
+                      />
+                      <label htmlFor="credit">Кредит та оплата частинами</label>
+                      <p style={{ fontSize: '0.85rem', color: '#666', margin: '0.5rem 0 0 1.5rem' }}>
+                        Оформлення кредитів у банках партнерів
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Всього */}
+            {cartItems.length > 0 && (
+              <div className="cart-total">
+                <p><strong>Всього: {formatPrice(totalPrice)}</strong></p>
+                <button className="checkout-btn">Оформити замовлення</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
