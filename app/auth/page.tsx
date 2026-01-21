@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/src/lib/supabase";
 import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
@@ -27,8 +27,8 @@ export default function AuthPage() {
     setError(null);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: "admin@novatech.com",
-        password: "admin"
+        email: "admin@example.com",
+        password: "admin123"
       });
 
       if (error) {
@@ -149,6 +149,36 @@ export default function AuthPage() {
       backgroundColor: "#1a1a1a",
       padding: "1rem"
     }}>
+      {/* Кнопка "Назад" */}
+      <button
+        onClick={() => router.push("/")}
+        style={{
+          position: "absolute",
+          top: "1.5rem",
+          left: "1.5rem",
+          padding: "0.5rem 1rem",
+          backgroundColor: "#ff6b35",
+          border: "none",
+          borderRadius: "4px",
+          color: "#fff",
+          fontSize: "1rem",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          fontWeight: "500",
+          transition: "background-color 0.2s ease"
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.backgroundColor = "#e55a24";
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.backgroundColor = "#ff6b35";
+        }}
+      >
+        ← Назад
+      </button>
+
       <div style={{
         width: "100%",
         maxWidth: "450px",
@@ -396,7 +426,7 @@ export default function AuthPage() {
           margin: "1.5rem 0 0 0",
           textAlign: "center"
         }}>
-          © NovaTech 1992 — 2026
+          © NovaTech 2025 — 2026
         </p>
       </div>
     </div>

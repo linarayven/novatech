@@ -20,10 +20,14 @@
       }
     ],
     "paths": {
-      "@/*": ["src/*"],
-      "@/lib/*": ["src/lib/*"],
-      "@/components/*": ["src/components/*"],
-      "@/utils/*": ["src/utils/*"]
+      "@/*": ["./*"],
+      "@/src/*": ["src/*"],
+      "@/src/lib/*": ["src/lib/*"],
+      "@/src/components/*": ["src/components/*"],
+      "@/src/utils/*": ["src/utils/*"],
+      "@/app/*": ["app/*"],
+      "@/app/components/*": ["app/components/*"],
+      "@/app/hooks/*": ["app/hooks/*"]
     }
   },
   "include": [
