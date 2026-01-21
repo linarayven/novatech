@@ -1,59 +1,35 @@
 @import "tailwindcss";
 
-/* ===== Основные переменные палитры ===== */
+/* Палітра кольорів */
 :root {
-  /* Светлая тема - Rozetka Style Tech */
-  --color-bg: #ffffff;           /* Белый - фон */
-  --color-text: #1a1a1a;         /* Черный - основной текст */
-  --color-primary: #e31e24;      /* Красный - кнопки, основной акцент */
-  --color-secondary: #c41c1c;    /* Темный красный - hover */
-  --color-accent-text: #3E77AA;  /* Синий акцент в тексте */
-  --color-header: #2c2c2c;       /* Серо-черный - header */
-  --color-card: #ffffff;         /* Белый — фон карточек товаров */
-  --color-border: #ddd;          /* Светлый серый — граница карточек */
-  --color-placeholder: #f5f5f5;  /* Очень светлый серый — плейсхолдеры */
-  --color-white: #ffffff;        /* Белый текст на кнопках */
-  --color-red: #e31e24;          /* Красный — ошибки */
-  --color-success: #4caf50;      /* Зеленый — успех */
-  --color-shadow: rgba(0, 0, 0, 0.08);  /* Тень */
-  --color-dark: #333;            /* Темный для текста */
-  --color-gray: #666;            /* Серый для secondary текста */
-  
-  /* Для совместимости */
+  --color-bg: #ffffff;
+  --color-text: #1a1a1a;
+  --color-primary: #e31e24;
+  --color-secondary: #c41c1c;
+  --color-accent-text: #3E77AA;
+  --color-header: #2c2c2c;
+  --color-card: #ffffff;
+  --color-border: #ddd;
+  --color-placeholder: #f5f5f5;
+  --color-white: #ffffff;
+  --color-red: #e31e24;
+  --color-success: #4caf50;
+  --color-shadow: rgba(0, 0, 0, 0.08);
+  --color-dark: #333;
+  --color-gray: #666;
   --background: var(--color-bg);
   --foreground: var(--color-text);
 }
 
-/* Поддержка Tailwind variables */
-@theme inline {
-  --color-background: var(--color-bg);
-  --color-foreground: var(--color-text);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-/* ===== Тёмная тема ===== */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #f5f5f5;           /* Светло-серый — фон страницы */
-    --color-text: #1a1a1a;         /* Черный — текст */
-    --color-primary: #e31e24;      /* Красный */
-    --color-secondary: #c41c1c;    /* Темный красный */
-    --color-accent-text: #3E77AA;  /* Синий акцент в тексте */
-    --color-header: #2c2c2c;       /* Серо-черный header */
-    --color-card: #ffffff;         /* Белый — карточки */
-    --color-border: #ddd;          /* Светлый серый — граница */
-    --color-placeholder: #f9f9f9;  /* Очень светлый — плейсхолдер */
-    --color-white: #ffffff;        /* Белый текст */
-    --color-red: #e31e24;          /* Красный */
-    --color-success: #4caf50;      /* Зеленый */
-    --color-shadow: rgba(0, 0, 0, 0.08);
-    --color-dark: #1a1a1a;
-    --color-gray: #666;
+    --color-bg: #f5f5f5;
+    --color-text: #1a1a1a;
+    --color-header: #2c2c2c;
   }
 }
 
-/* ===== Базовые стили ===== */
+/* Базові стилі */
 body {
   background: var(--color-bg);
   color: var(--color-text);
@@ -62,7 +38,6 @@ body {
   padding: 0;
 }
 
-/* ===== Кнопки ===== */
 button {
   font-family: inherit;
   cursor: pointer;
@@ -70,7 +45,6 @@ button {
   transition: background-color 0.2s, color 0.2s;
 }
 
-/* ===== Ссылки ===== */
 a {
   color: var(--color-accent-text);
   text-decoration: none;
@@ -80,7 +54,6 @@ a:hover {
   color: #2d5a7f;
 }
 
-/* ===== Инпуты ===== */
 input, textarea {
   font-family: inherit;
   border: 1px solid var(--color-border);
@@ -96,14 +69,14 @@ input:focus, textarea:focus {
   border-color: var(--color-primary);
 }
 
-/* ===== Page Container ===== */
+/* Сторінка */
 .page-container {
   background-color: var(--color-bg);
   color: var(--color-text);
   min-height: 100vh;
 }
 
-/* ===== Header ===== */
+/* Заголовок */
 .header {
   background-color: var(--color-header);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -132,7 +105,7 @@ input:focus, textarea:focus {
   color: #ffcccc;
 }
 
-/* ===== Search Container ===== */
+/* Пошук */
 .search-container {
   flex: 1;
   display: flex;
@@ -147,7 +120,6 @@ input:focus, textarea:focus {
   max-width: 384px;
 }
 
-/* ===== Search Input ===== */
 .search-input {
   border: 1px solid #ddd;
   background-color: var(--color-card);
@@ -172,7 +144,6 @@ input:focus, textarea:focus {
   box-shadow: inset 0 0 0 1px var(--color-primary);
 }
 
-/* ===== Search Button ===== */
 .search-btn {
   background-color: var(--color-primary);
   color: var(--color-white);
@@ -195,7 +166,7 @@ input:focus, textarea:focus {
   transform: translateY(calc(-50% - 1px));
 }
 
-/* ===== Suggestions Dropdown ===== */
+/* Підказки пошуку */
 .suggestions-dropdown {
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
@@ -230,7 +201,7 @@ input:focus, textarea:focus {
   color: var(--color-white);
 }
 
-/* ===== Icon Buttons Container ===== */
+/* Кнопки дій в заголовку */
 .header-actions {
   display: flex;
   gap: 1rem;
@@ -238,7 +209,6 @@ input:focus, textarea:focus {
   margin-left: 1rem;
 }
 
-/* ===== Icon Button ===== */
 .icon-btn {
   background-color: var(--color-primary);
   color: var(--color-white);
@@ -263,7 +233,7 @@ input:focus, textarea:focus {
   transform: translateY(0);
 }
 
-/* ===== Breadcrumb ===== */
+/* Хлібні крихти */
 .breadcrumb {
   color: var(--color-text);
   font-size: 0.875rem;
@@ -289,7 +259,7 @@ input:focus, textarea:focus {
   text-decoration: underline;
 }
 
-/* ===== Category Button ===== */
+/* Категорії */
 .category-btn {
   width: 100%;
   text-align: left;
@@ -318,7 +288,7 @@ input:focus, textarea:focus {
   box-shadow: 0 2px 8px rgba(227, 30, 36, 0.2);
 }
 
-/* ===== Subcategory Button ===== */
+/* Підкатегорії */
 .subcategory-btn {
   text-align: left;
   padding: 0.5rem 0.75rem;
@@ -344,7 +314,7 @@ input:focus, textarea:focus {
   color: var(--color-white);
 }
 
-/* ===== Product Card ===== */
+/* Карточка товару */
 .product-card {
   background-color: var(--color-card);
   border: 1px solid #eee;
@@ -410,7 +380,6 @@ input:focus, textarea:focus {
   margin-bottom: 0.5rem;
 }
 
-/* ===== Add to Cart Button ===== */
 .add-to-cart-btn {
   width: 100%;
   padding: 0.75rem;
@@ -437,7 +406,7 @@ input:focus, textarea:focus {
   transform: translateY(0);
 }
 
-/* ===== Error Message ===== */
+/* Повідомлення та стани */
 .error-message {
   color: var(--color-red);
   grid-column: 1 / -1;
@@ -445,7 +414,6 @@ input:focus, textarea:focus {
   margin-top: 2rem;
 }
 
-/* ===== Empty State ===== */
 .empty-state {
   color: var(--color-text);
   grid-column: 1 / -1;
@@ -453,7 +421,7 @@ input:focus, textarea:focus {
   margin-top: 2rem;
 }
 
-/* ===== CART MODAL ===== */
+/* Модальне вікно корзини */
 .cart-modal-overlay {
   position: fixed;
   top: 0;
@@ -469,12 +437,8 @@ input:focus, textarea:focus {
 }
 
 @keyframes slideIn {
-  from {
-    background-color: rgba(0, 0, 0, 0);
-  }
-  to {
-    background-color: rgba(0, 0, 0, 0.5);
-  }
+  from { background-color: rgba(0, 0, 0, 0); }
+  to { background-color: rgba(0, 0, 0, 0.5); }
 }
 
 .cart-modal {
@@ -491,12 +455,8 @@ input:focus, textarea:focus {
 }
 
 @keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 .cart-header {
@@ -592,6 +552,7 @@ input:focus, textarea:focus {
   background-color: #ffe0e0;
 }
 
+/* Форма */
 .cart-form {
   padding: 1rem;
   border-top: 1px solid var(--color-border);
@@ -629,7 +590,7 @@ input:focus, textarea:focus {
   box-shadow: inset 0 0 0 1px var(--color-primary);
 }
 
-/* ===== Payment Options ===== */
+/* Оплата */
 .payment-option {
   margin-bottom: 1rem;
   padding: 1rem;
@@ -694,6 +655,7 @@ input:focus, textarea:focus {
   flex-shrink: 0;
 }
 
+/* Итого и оформлення */
 .cart-total {
   padding: 1.5rem;
   background-color: #f9f9f9;

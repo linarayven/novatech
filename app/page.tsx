@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CATEGORIES } from "@/lib/constants";
 
-// ✅ Типи
+// Типи
 interface Product {
   id: string;
   title: string;
@@ -21,7 +21,7 @@ export default function Home() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ Стан
+  // Стан компонента
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState<string | null>(null);
@@ -37,7 +37,6 @@ export default function Home() {
   const [paymentCategory, setPaymentCategory] = useState<string>("on_delivery");
   const [paymentMethod, setPaymentMethod] = useState<string>("card");
   
-  // Поля получателя
   const [recipient, setRecipient] = useState({
     lastName: "",
     firstName: "",
@@ -45,7 +44,6 @@ export default function Home() {
     phone: "+38 "
   });
 
-  // Ошибки валидации
   const [errors, setErrors] = useState({
     email: "",
     phone: "",
@@ -53,7 +51,7 @@ export default function Home() {
     firstName: ""
   });
 
-  // ==================== Загрузка продуктів ====================
+  // Загрузка товарів зі Supabase
   useEffect(() => {
     async function fetchProducts() {
       setLoading(true);
@@ -73,14 +71,14 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  // ==================== Підкатегорії через useMemo ====================
+  // Отримання доступних підкатегорій (брендів) для обраної категорії
   const subCategories = useMemo(() => {
     if (!category) return [];
     return Array.from(new Set(products.filter(p => p.category === category).map(p => p.brand)))
       .filter((brand): brand is string => brand !== undefined && brand !== '') as string[];
   }, [category, products]);
 
-  // ==================== Подсказки для пошуку ====================
+  // Дебаунс пошукового тексту
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
 
   useEffect(() => {
@@ -90,6 +88,7 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [searchText]);
 
+  // Автопропозиції для пошуку
   useEffect(() => {
     if (!debouncedSearchText) {
       setTimeout(() => setSuggestions([]), 0);
@@ -102,7 +101,7 @@ export default function Home() {
     setTimeout(() => setSuggestions(filtered), 0);
   }, [debouncedSearchText, products]);
 
-  // ==================== Функції ====================
+  // Функції фільтрування товарів
   const handleSearch = useCallback(() => {
     const result = products.filter((p) =>
       p.title.toLowerCase().includes(searchText.toLowerCase())
@@ -133,7 +132,6 @@ export default function Home() {
     setFilteredProducts(products.filter(p => p.category === cat && p.brand === sub));
   }, [products]);
 
-  // Скидання фільтрів
   const resetFilters = useCallback(() => {
     setCategory(null);
     setSubCategory(null);
@@ -142,13 +140,12 @@ export default function Home() {
     setFilteredProducts(products);
   }, [products]);
 
-  // Можна добавити форматування
+  // Форматування ціни
   const formatPrice = (price: number | string) => {
     const num = typeof price === 'string' ? parseFloat(price) : price;
     return num.toLocaleString('uk-UA') + ' грн';
   };
 
-  // Обробка помилки завантаження image
   const handleImageError = (productId: string) => {
     setLoadedImages(prev => {
       const newSet = new Set(prev);
@@ -157,7 +154,7 @@ export default function Home() {
     });
   };
 
-  // ==================== Логика Корзини ====================
+  // Функції управління корзиною
   const addToCart = useCallback((product: Product) => {
     setCartItems(prev => {
       const existingItem = prev.find(item => item.id === product.id);
@@ -193,19 +190,20 @@ export default function Home() {
   const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  // ==================== Валидація ====================
+  // Валідація e-mail
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
+  // Валідація телефону
   const validatePhone = (phone: string): boolean => {
     const digitsOnly = phone.replace(/\D/g, '');
     return digitsOnly.length >= 10;
   };
 
+  // Обробка вводу e-mail з фільтруванням символів
   const handleEmailChange = (value: string) => {
-    // Фильтруем только допустимые символы для email на английском
     const filtered = value.replace(/[^a-zA-Z0-9@._\-+]/g, '');
     
     setEmail(filtered);
@@ -216,25 +214,20 @@ export default function Home() {
     }
   };
 
+  // Обробка вводу телефону з форматуванням +38 0XX XXX XX XX
   const handlePhoneChange = (value: string) => {
-    // Если пришло пустое значение, устанавливаем +38
     if (!value || value === '') {
       setRecipient(prev => ({ ...prev, phone: '+38 ' }));
       return;
     }
     
-    // Если значение начинается не с +38, это ошибка
     if (!value.startsWith('+38')) {
       return;
     }
     
-    // Фильтруем только цифры
     let digitsOnly = value.replace(/\D/g, '');
-    
-    // Берём максимум 12 цифр (38 + 10 цифр номера)
     const limited = digitsOnly.slice(0, 12);
     
-    // Форматируем: +38 0XX XXX XX XX
     let formatted = '+38';
     if (limited.length > 2) {
       formatted += ' ' + limited.slice(2, 5);
@@ -258,8 +251,8 @@ export default function Home() {
     }
   };
 
+  // Обробка вводу прізвища з фільтруванням та обмеженням довжини
   const handleLastNameChange = (value: string) => {
-    // Только буквы, апострофы и пробелы
     const filtered = value.replace(/[^а-яА-ЯіІєЄґҐ'ʼ\s-]/g, '');
     const limited = filtered.slice(0, 50);
     
@@ -269,8 +262,8 @@ export default function Home() {
     }
   };
 
+  // Обробка вводу імені з фільтруванням та обмеженням довжини
   const handleFirstNameChange = (value: string) => {
-    // Только буквы, апострофы и пробелы
     const filtered = value.replace(/[^а-яА-ЯіІєЄґҐ'ʼ\s-]/g, '');
     const limited = filtered.slice(0, 50);
     
@@ -280,7 +273,7 @@ export default function Home() {
     }
   };
 
-  // Финальная валидация перед отправкой
+  // Фінальна валідація форми перед відправкою замовлення
   const validateForm = (): boolean => {
     const newErrors = {
       email: "",
@@ -289,26 +282,22 @@ export default function Home() {
       firstName: ""
     };
 
-    // Проверка email
     if (!email.trim()) {
       newErrors.email = "Поле Email обов'язкове";
     } else if (!validateEmail(email)) {
       newErrors.email = "Введіть дійсну поштову адресу";
     }
 
-    // Проверка телефона
     if (!recipient.phone.trim()) {
       newErrors.phone = "Поле телефон обов'язкове";
     } else if (!validatePhone(recipient.phone)) {
       newErrors.phone = "Введіть дійсний номер мобільного телефону отримувача (мінімум 10 цифр)";
     }
 
-    // Проверка прізвища
     if (!recipient.lastName.trim()) {
       newErrors.lastName = "Введіть прізвище отримувача";
     }
 
-    // Проверка імені
     if (!recipient.firstName.trim()) {
       newErrors.firstName = "Введіть ім'я отримувача";
     }
@@ -317,14 +306,14 @@ export default function Home() {
     return Object.values(newErrors).every(err => err === "");
   };
 
+  // Оформлення замовлення з валідацією та логуванням
   const handleCheckout = async () => {
     if (!validateForm()) {
       return;
     }
 
     try {
-      // Здесь идет логика отправки заказа
-      console.log("Заказ готов к отправке", {
+      console.log("Замовлення готове до відправки", {
         email,
         recipient,
         paymentCategory,
@@ -333,38 +322,21 @@ export default function Home() {
         totalPrice
       });
 
-      // Пример отправки на сервер:
-      // const { data, error } = await supabase.from("orders").insert({
-      //   email,
-      //   recipient,
-      //   paymentCategory,
-      //   paymentMethod,
-      //   items: cartItems,
-      //   totalPrice,
-      //   createdAt: new Date()
-      // });
-
-      // if (error) {
-      //   console.error("Ошибка при оформлении заказа:", error);
-      //   return;
-      // }
-
-      alert("Заказ успешно оформлен!");
+      alert("Замовлення успішно оформлено!");
       setShowCart(false);
       setCartItems([]);
       setEmail("");
       setRecipient({ lastName: "", firstName: "", patronymic: "", phone: "+38 " });
     } catch (err) {
-      console.error("Ошибка:", err);
+      console.error("Помилка:", err);
     }
   };
 
-  // ==================== JSX ====================
+  // ==================== ІНТЕРФЕЙС ====================
   return (
     <div className="page-wrapper">
-      {/* ====== Хедер ====== */}
+      {/* Шапка сайту */}
       <header className="header">
-        {/* NovaTech */}
         <h1
           className="header-title"
           onClick={() => {
@@ -375,7 +347,7 @@ export default function Home() {
           NovaTech
         </h1>
 
-        {/* Пошук */}
+        {/* Пошук товарів */}
         <div className="search-container">
           <div className="search-wrapper">
             <input
@@ -397,7 +369,7 @@ export default function Home() {
               🔍
             </button>
 
-            {/* Автопропозиції */}
+            {/* Списки пропозицій */}
             {suggestions.length > 0 && (
               <div className="suggestions-dropdown">
                 {suggestions.map((s) => (
@@ -419,7 +391,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Профіль і корзина */}
+        {/* Кнопки профілю та корзини */}
         <div className="header-actions">
           <button
             aria-label="Профіль"
@@ -457,11 +429,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ==================== Основний контент ==================== */}
-        <div style={{ display: 'flex', gap: '1.5rem', padding: '1rem' }}>
-          {/* ====== Бокова панель ====== */}
-          <aside style={{ width: '16rem', flexShrink: 0 }}>
-          {/* Breadcrumbs */}
+      {/* Основна сторінка */}
+      <div style={{ display: 'flex', gap: '1.5rem', padding: '1rem' }}>
+        {/* Бокова панель з категоріями */}
+        <aside style={{ width: '16rem', flexShrink: 0 }}>
           <div className="breadcrumb">
             <button className="breadcrumb-btn" onClick={() => { resetFilters(); router.push("/"); }}>🏠</button>
             {category && (
@@ -480,7 +451,7 @@ export default function Home() {
             )}
           </div>
 
-          {/* Категорії */}
+          {/* Список категорій */}
           {CATEGORIES.map((cat) => (
             <div key={cat.name} style={{ marginBottom: '1rem' }}>
               <button
@@ -490,6 +461,7 @@ export default function Home() {
                 {cat.label}
               </button>
 
+              {/* Підкатегорії (бренди) */}
               {category === cat.name && subCategories.length > 0 && (
                 <div style={{ marginLeft: '1rem', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   {subCategories.map((sub) => (
@@ -507,7 +479,7 @@ export default function Home() {
           ))}
         </aside>
 
-        {/* ====== Сетка товарів ====== */}
+        {/* Сітка товарів */}
         <main style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
           {loading && <p style={{ gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>Завантаження...</p>}
           {error && <p className="error-message">{error}</p>}
@@ -547,7 +519,7 @@ export default function Home() {
         </main>
       </div>
 
-      {/* ==================== МОДАЛ КОРЗИНИ ==================== */}
+      {/* Модальне вікно корзини */}
       {showCart && (
         <div className="cart-modal-overlay" onClick={() => setShowCart(false)}>
           <div className="cart-modal" onClick={(e) => e.stopPropagation()}>
@@ -565,7 +537,7 @@ export default function Home() {
               <p className="empty-state">Корзина пуста</p>
             ) : (
               <div className="cart-content">
-                {/* Список товарів */}
+                {/* Товари в корзині */}
                 <div className="cart-items">
                   {cartItems.map((item) => (
                     <div key={item.id} className="cart-item">
@@ -600,9 +572,8 @@ export default function Home() {
                   ))}
                 </div>
 
-                {/* Форма платежу */}
+                {/* Форма оформлення замовлення */}
                 <div className="cart-form">
-                  {/* Email */}
                   <div className="form-group">
                     <label>Email:</label>
                     <input
@@ -676,11 +647,10 @@ export default function Home() {
                     {errors.phone && <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>{errors.phone}</p>}
                   </div>
 
-                  {/* Способ оплаты */}
+                  {/* Способи оплати */}
                   <div className="form-group" style={{ marginTop: '1rem' }}>
                     <label style={{ marginBottom: '0.75rem', display: 'block' }}><strong>Оплата</strong></label>
                     
-                    {/* Категорія 1: Оплата під час отримання */}
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '0.75rem', cursor: 'pointer', borderRight: paymentCategory === "on_delivery" ? '3px solid #dc2626' : 'none' }}
                       onClick={() => setPaymentCategory("on_delivery")}
                     >
@@ -696,7 +666,6 @@ export default function Home() {
                       <label htmlFor="delivery" style={{ margin: 0, cursor: 'pointer' }}>Оплата під час отримання товару</label>
                     </div>
 
-                    {/* Категорія 2: Оплатити зараз */}
                     <div style={{ border: '1px solid #ddd', borderRadius: '4px', marginBottom: '0.75rem' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', cursor: 'pointer', borderRight: paymentCategory === "pay_now" ? '3px solid #dc2626' : 'none' }}
                         onClick={() => setPaymentCategory("pay_now")}
@@ -749,7 +718,6 @@ export default function Home() {
                       )}
                     </div>
 
-                    {/* Категорія 3: Кредит та оплата частинами */}
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', flexDirection: 'column', borderRight: paymentCategory === "credit" ? '3px solid #dc2626' : 'none' }}
                       onClick={() => setPaymentCategory("credit")}
                     >
@@ -774,7 +742,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* Всього */}
+            {/* Підсумок замовлення */}
             {cartItems.length > 0 && (
               <div className="cart-total">
                 <p><strong>Всього: {formatPrice(totalPrice)}</strong></p>
