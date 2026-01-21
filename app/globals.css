@@ -2,18 +2,32 @@
 
 /* ===== Основные переменные палитры ===== */
 :root {
-  /* Светлая тема */
-  --background: #c9d1c8;   /* Туман — фон страницы */
-  --foreground: #04202c;   /* Лес — основной текст */
-  --primary: #304040;      /* Вечно-зеленый — активные кнопки, акценты */
-  --secondary: #5b7065;    /* Сосна — неактивные кнопки */
-  --card-bg: #ffffff;      /* Фон карточек товаров */
+  /* Светлая тема - Rozetka Style Tech */
+  --color-bg: #ffffff;           /* Белый - фон */
+  --color-text: #1a1a1a;         /* Черный - основной текст */
+  --color-primary: #e31e24;      /* Красный - кнопки, основной акцент */
+  --color-secondary: #c41c1c;    /* Темный красный - hover */
+  --color-accent-text: #3E77AA;  /* Синий акцент в тексте */
+  --color-header: #2c2c2c;       /* Серо-черный - header */
+  --color-card: #ffffff;         /* Белый — фон карточек товаров */
+  --color-border: #ddd;          /* Светлый серый — граница карточек */
+  --color-placeholder: #f5f5f5;  /* Очень светлый серый — плейсхолдеры */
+  --color-white: #ffffff;        /* Белый текст на кнопках */
+  --color-red: #e31e24;          /* Красный — ошибки */
+  --color-success: #4caf50;      /* Зеленый — успех */
+  --color-shadow: rgba(0, 0, 0, 0.08);  /* Тень */
+  --color-dark: #333;            /* Темный для текста */
+  --color-gray: #666;            /* Серый для secondary текста */
+  
+  /* Для совместимости */
+  --background: var(--color-bg);
+  --foreground: var(--color-text);
 }
 
 /* Поддержка Tailwind variables */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -21,18 +35,28 @@
 /* ===== Тёмная тема ===== */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #04202c; /* Лес — фон страницы */
-    --foreground: #c9d1c8; /* Туман — текст */
-    --primary: #5b7065;    /* Сосна — активные кнопки */
-    --secondary: #304040;  /* Вечно-зеленый — неактивные кнопки */
-    --card-bg: #304040;    /* Фон карточек */
+    --color-bg: #f5f5f5;           /* Светло-серый — фон страницы */
+    --color-text: #1a1a1a;         /* Черный — текст */
+    --color-primary: #e31e24;      /* Красный */
+    --color-secondary: #c41c1c;    /* Темный красный */
+    --color-accent-text: #3E77AA;  /* Синий акцент в тексте */
+    --color-header: #2c2c2c;       /* Серо-черный header */
+    --color-card: #ffffff;         /* Белый — карточки */
+    --color-border: #ddd;          /* Светлый серый — граница */
+    --color-placeholder: #f9f9f9;  /* Очень светлый — плейсхолдер */
+    --color-white: #ffffff;        /* Белый текст */
+    --color-red: #e31e24;          /* Красный */
+    --color-success: #4caf50;      /* Зеленый */
+    --color-shadow: rgba(0, 0, 0, 0.08);
+    --color-dark: #1a1a1a;
+    --color-gray: #666;
   }
 }
 
 /* ===== Базовые стили ===== */
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-bg);
+  color: var(--color-text);
   font-family: Arial, Helvetica, sans-serif;
   margin: 0;
   padding: 0;
@@ -48,20 +72,20 @@ button {
 
 /* ===== Ссылки ===== */
 a {
-  color: var(--primary);
+  color: var(--color-accent-text);
   text-decoration: none;
 }
 
 a:hover {
-  color: var(--secondary);
+  color: #2d5a7f;
 }
 
 /* ===== Инпуты ===== */
 input, textarea {
   font-family: inherit;
-  border: 1px solid var(--secondary);
-  background-color: var(--card-bg);
-  color: var(--foreground);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card);
+  color: var(--color-text);
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
   outline: none;
@@ -69,68 +93,362 @@ input, textarea {
 }
 
 input:focus, textarea:focus {
-  border-color: var(--primary);
+  border-color: var(--color-primary);
 }
 
-/* ===== Карточки товаров ===== */
-.card {
-  background-color: var(--card-bg);
-  color: var(--foreground);
-  padding: 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  transition: box-shadow 0.2s;
+/* ===== Page Container ===== */
+.page-container {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
 }
 
-.card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+/* ===== Header ===== */
+.header {
+  background-color: var(--color-header);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-bottom: 2px solid var(--color-primary);
 }
 
-/* ===== Баннер ===== */
-.banner {
-  background-color: var(--primary);
-  color: white;
-  font-weight: 800;
-  text-align: center;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+.header-title {
+  color: var(--color-white);
+  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* ===== Категории ===== */
-.category-btn {
-  padding: 0.5rem 1rem;
+.header-title:hover {
+  color: #ffcccc;
+}
+
+/* ===== Search Container ===== */
+.search-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  min-width: 300px;
+}
+
+.search-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 384px;
+}
+
+/* ===== Search Input ===== */
+.search-input {
+  border: 1px solid #ddd;
+  background-color: var(--color-card);
+  color: var(--color-text);
+  padding: 0.5rem 0.75rem;
+  padding-right: 2.5rem;
+  border-radius: 0.25rem;
+  width: 100%;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.search-input::placeholder {
+  color: #999;
+  opacity: 1;
+}
+
+.search-input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+/* ===== Search Button ===== */
+.search-btn {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 0.5rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(227, 30, 36, 0.2);
+}
+
+.search-btn:hover {
+  background-color: #c41c1c;
+  box-shadow: 0 4px 12px rgba(227, 30, 36, 0.3);
+  transform: translateY(calc(-50% - 1px));
+}
+
+/* ===== Suggestions Dropdown ===== */
+.suggestions-dropdown {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
   border-radius: 0.375rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  width: 100%;
+  z-index: 10;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  color: var(--color-text);
+  transition: background-color 0.2s, color 0.2s;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  display: block;
+}
+
+.suggestion-item:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+/* ===== Icon Buttons Container ===== */
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+/* ===== Icon Button ===== */
+.icon-btn {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(227, 30, 36, 0.15);
+}
+
+.icon-btn:hover {
+  background-color: #c41c1c;
+  box-shadow: 0 4px 10px rgba(227, 30, 36, 0.25);
+  transform: translateY(-1px);
+}
+
+.icon-btn:active {
+  transform: translateY(0);
+}
+
+/* ===== Breadcrumb ===== */
+.breadcrumb {
+  color: var(--color-text);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.breadcrumb-btn {
+  color: var(--color-text);
+  background: none;
+  padding: 0;
+  text-decoration: none;
+  transition: text-decoration 0.2s;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.breadcrumb-btn:hover {
+  text-decoration: underline;
+}
+
+/* ===== Category Button ===== */
+.category-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
   font-weight: 600;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  border: 1px solid #ccc;
+  background: #ffffff;
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.category-btn:hover:not(.active) {
+  background-color: #fff;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 0 2px 6px rgba(227, 30, 36, 0.12);
 }
 
 .category-btn.active {
-  background-color: var(--primary);
-  color: white;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  box-shadow: 0 2px 8px rgba(227, 30, 36, 0.2);
 }
 
-.category-btn.inactive {
-  background-color: var(--secondary);
-  color: white;
-}
-
-.category-btn.inactive:hover {
-  background-color: var(--primary);
-}
-
-/* ===== Кнопка корзины ===== */
-.add-to-cart-btn {
-  background-color: var(--primary);
-  color: white;
-  padding: 0.5rem 1rem;
+/* ===== Subcategory Button ===== */
+.subcategory-btn {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: inherit;
   width: 100%;
+}
+
+.subcategory-btn:hover:not(.active) {
+  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--color-primary);
+  padding-left: 1rem;
+}
+
+.subcategory-btn.active {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* ===== Product Card ===== */
+.product-card {
+  background-color: var(--color-card);
+  border: 1px solid #eee;
+  padding: 1rem;
+  border-radius: 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+}
+
+.product-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.product-image-placeholder {
+  width: 100%;
+  height: 200px;
+  background-color: var(--color-placeholder);
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  color: var(--color-secondary);
+  font-size: 2rem;
+}
+
+.product-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+  color: var(--color-text);
+}
+
+.product-price {
   font-weight: 600;
-  transition: background-color 0.2s;
+  margin-bottom: 0.5rem;
+  color: var(--color-accent-text);
+}
+
+.product-category {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.product-brand {
+  font-size: 0.875rem;
+  color: var(--color-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* ===== Add to Cart Button ===== */
+.add-to-cart-btn {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+  border-radius: 0.25rem;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(227, 30, 36, 0.2);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
 }
 
 .add-to-cart-btn:hover {
-  background-color: var(--secondary);
+  background-color: #ff5555;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(227, 30, 36, 0.25);
+}
+
+.add-to-cart-btn:active {
+  transform: translateY(0);
+}
+
+/* ===== Error Message ===== */
+.error-message {
+  color: var(--color-red);
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+  color: var(--color-text);
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 2rem;
 }

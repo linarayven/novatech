@@ -138,12 +138,12 @@ export default function Home() {
 
   // ==================== JSX ====================
   return (
-    <div className="min-h-screen bg-[#c9d1c8] text-[#04202c]">
+    <div className="page-container">
       {/* ====== Хедер ====== */}
-      <header className="bg-[#ffffff] shadow p-4 flex items-center justify-between">
+      <header className="header">
         {/* NovaTech */}
         <h1
-          className="text-2xl font-bold text-[#304040] cursor-pointer"
+          className="header-title"
           onClick={() => {
             resetFilters();
             router.push("/");
@@ -153,8 +153,8 @@ export default function Home() {
         </h1>
 
         {/* Пошук */}
-        <div className="flex-1 flex justify-center relative">
-          <div className="relative w-96">
+        <div className="search-container">
+          <div className="search-wrapper">
             <input
               type="text"
               placeholder="Пошук товарів..."
@@ -163,11 +163,11 @@ export default function Home() {
               onChange={(e) => setSearchText(e.target.value)}
               onKeyDown={handleKeyPress}
               ref={inputRef}
-              className="border border-[#5b7065] rounded px-3 py-1 pr-10 focus:outline-[#304040] bg-[#ffffff] text-[#04202c] w-full"
+              className="search-input"
             />
 
             <button
-              className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-white bg-[#304040] rounded hover:bg-[#5b7065] transition"
+              className="search-btn"
               onClick={handleSearch}
               aria-label="Пошук"
             >
@@ -176,11 +176,11 @@ export default function Home() {
 
             {/* Автоподсказки */}
             {suggestions.length > 0 && (
-              <div className="absolute top-full left-0 mt-1 w-full bg-white border border-[#5b7065] rounded shadow z-10">
+              <div className="suggestions-dropdown">
                 {suggestions.map((s) => (
                   <div
                     key={s.id}
-                    className="px-2 py-1 hover:bg-[#5b7065] hover:text-white cursor-pointer"
+                    className="suggestion-item"
                     onClick={() => {
                       setSearchText(s.title);
                       setFilteredProducts([s]);
@@ -197,30 +197,40 @@ export default function Home() {
         </div>
 
         {/* Профіль і корзина */}
-        <div className="flex gap-4 ml-4">
-          <button aria-label="Профіль" className="px-3 py-1 rounded bg-[#304040] text-white hover:bg-[#5b7065] transition">👤</button>
-          <button aria-label="Корзина" className="px-3 py-1 rounded bg-[#304040] text-white hover:bg-[#5b7065] transition">🛒</button>
+        <div className="header-actions">
+          <button
+            aria-label="Профіль"
+            className="icon-btn"
+          >
+            👤
+          </button>
+          <button
+            aria-label="Корзина"
+            className="icon-btn"
+          >
+            🛒
+          </button>
         </div>
       </header>
 
       {/* ==================== Основний контент ==================== */}
-      <div className="flex gap-6 p-4">
+      <div style={{ display: 'flex', gap: '1.5rem', padding: '1rem' }}>
         {/* ====== Бокова панель ====== */}
-        <aside className="w-64 flex-shrink-0">
+        <aside style={{ width: '16rem', flexShrink: 0 }}>
           {/* Breadcrumbs */}
-          <div className="mb-4 text-sm text-[#04202c]">
-            <button className="hover:underline" onClick={() => { resetFilters(); router.push("/"); }}>🏠</button>
+          <div className="breadcrumb">
+            <button className="breadcrumb-btn" onClick={() => { resetFilters(); router.push("/"); }}>🏠</button>
             {category && (
               <>
-                <span className="mx-1">/</span>
-                <button className="hover:underline" onClick={() => handleCategoryFilter(category)}>
+                <span style={{ margin: '0 0.5rem' }}>/</span>
+                <button className="breadcrumb-btn" onClick={() => handleCategoryFilter(category)}>
                   {CATEGORIES.find(c => c.name === category)?.label}
                 </button>
               </>
             )}
             {subCategory && (
               <>
-                <span className="mx-1">/</span>
+                <span style={{ margin: '0 0.5rem' }}>/</span>
                 <span>{subCategory}</span>
               </>
             )}
@@ -228,20 +238,20 @@ export default function Home() {
 
           {/* Категорії */}
           {CATEGORIES.map((cat) => (
-            <div key={cat.name} className="mb-4">
+            <div key={cat.name} style={{ marginBottom: '1rem' }}>
               <button
-                className={`font-semibold w-full text-left p-2 rounded ${category === cat.name ? "bg-[#304040] text-white" : "hover:bg-[#5b7065] text-[#04202c]"}`}
+                className={`category-btn ${category === cat.name ? 'active' : ''}`}
                 onClick={() => handleCategoryFilter(cat.name)}
               >
                 {cat.label}
               </button>
 
               {category === cat.name && subCategories.length > 0 && (
-                <div className="ml-4 mt-2 flex flex-col gap-1">
+                <div style={{ marginLeft: '1rem', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   {subCategories.map((sub) => (
                     <button
                       key={sub}
-                      className={`text-left p-1 rounded text-sm ${subCategory === sub ? "bg-[#304040] text-white" : "hover:bg-[#5b7065] text-[#04202c]"}`}
+                      className={`subcategory-btn ${subCategory === sub ? 'active' : ''}`}
                       onClick={() => handleSubCategoryFilter(sub, cat.name)}
                     >
                       {sub}
@@ -254,13 +264,16 @@ export default function Home() {
         </aside>
 
         {/* ====== Сетка товарів ====== */}
-        <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {loading && <p className="col-span-full text-center mt-8">Завантаження...</p>}
-          {error && <p className="col-span-full text-center mt-8 text-red-600">{error}</p>}
-          {!loading && filteredProducts.length === 0 && <p className="col-span-full text-center mt-8">Товари не знайдені</p>}
+        <main style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
+          {loading && <p style={{ gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>Завантаження...</p>}
+          {error && <p className="error-message">{error}</p>}
+          {!loading && filteredProducts.length === 0 && <p className="empty-state">Товари не знайдені</p>}
 
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-[#ffffff] p-4 rounded shadow hover:shadow-lg border border-[#5b7065] transition">
+            <div
+              key={product.id}
+              className="product-card"
+            >
               {product.image && !loadedImages.has(product.id) ? (
                 <Image
                   src={product.image}
@@ -268,18 +281,18 @@ export default function Home() {
                   width={300}
                   height={200}
                   onError={() => handleImageError(product.id)}
-                  className="mb-2 rounded w-full object-cover"
+                  className="product-image"
                 />
               ) : (
-                <div className="w-full h-[200px] bg-[#e0e0e0] rounded mb-2 flex items-center justify-center text-[#5b7065]">
+                <div className="product-image-placeholder">
                   📦 Немає зображення
                 </div>
               )}
-              <h2 className="font-bold mb-1">{product.title}</h2>
-              <p className="font-semibold mb-1">Ціна: {formatPrice(product.price)}</p>
-              <p className="text-sm text-[#304040]">Категорія: {product.category}</p>
-              {product.brand && <p className="text-sm text-[#5b7065]">Бренд: {product.brand}</p>}
-              <button className="mt-2 w-full py-1 rounded shadow-sm bg-[#304040] text-white hover:bg-[#5b7065] transition">Додати в корзину</button>
+              <h2 className="product-title">{product.title}</h2>
+              <p className="product-price">Ціна: {formatPrice(product.price)}</p>
+              <p className="product-category">Категорія: {product.category}</p>
+              {product.brand && <p className="product-brand">Бренд: {product.brand}</p>}
+              <button className="add-to-cart-btn">Додати в корзину</button>
             </div>
           ))}
         </main>
