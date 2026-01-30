@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/src/lib/supabase";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { formatPhoneInput, validatePhone, formatPrice } from "@/src/lib/validation";
+import { parseFullName, formatFullName } from "@/src/lib/nameHelper";
+import { FormError, FormSuccess } from "@/app/components/FormComponents";
 
 interface Product {
   id: string;
@@ -94,25 +97,12 @@ export default function ProfilePage() {
           setProfile(profileData);
           
           // Парсимо full_name на компоненти
-          const fullNameParts = profileData.full_name ? profileData.full_name.trim().split(/\s+/) : [];
-          let firstName = "";
-          let patronymic = "";
-          let lastName = "";
-          
-          if (fullNameParts.length === 2) {
-            [firstName, lastName] = fullNameParts;
-          } else if (fullNameParts.length >= 3) {
-            firstName = fullNameParts[0];
-            patronymic = fullNameParts[1];
-            lastName = fullNameParts.slice(2).join(" ");
-          } else if (fullNameParts.length === 1) {
-            firstName = fullNameParts[0];
-          }
+          const { firstName, patronymic, lastName } = parseFullName(profileData.full_name || "");
           
           setEditFirstName(firstName);
           setEditPatronymic(patronymic);
           setEditLastName(lastName);
-          setEditPhone(profileData.phone || "");
+          setEditPhone(formatPhoneInput(profileData.phone) || "+38 ");
         }
 
         // Завантаження замовлень
@@ -189,13 +179,22 @@ export default function ProfilePage() {
       return;
     }
 
+    if (!validatePhone(editPhone)) {
+      setError("Введіть дійсний номер мобільного телефону (мінімум 10 цифр)");
+      setSaving(false);
+      return;
+    }
+
     try {
       // Формуємо full_name з компонентів
-      const fullName = `${editFirstName}${editPatronymic ? ' ' + editPatronymic : ''} ${editLastName}`.trim();
+      const fullName = formatFullName(editFirstName, editPatronymic, editLastName);
       
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
+          first_name: editFirstName,
+          patronymic: editPatronymic || null,
+          last_name: editLastName,
           full_name: fullName,
           phone: editPhone
         })
@@ -260,10 +259,6 @@ export default function ProfilePage() {
       newSet.add(productId);
       return newSet;
     });
-  };
-
-  const formatPrice = (price: number) => {
-    return price.toLocaleString('uk-UA') + ' грн';
   };
 
   const formatDate = (dateString: string) => {
@@ -451,31 +446,9 @@ export default function ProfilePage() {
               <form onSubmit={handleSaveProfile}>
                 <h2 style={{ marginTop: 0 }}>Редактування профілю</h2>
 
-                {error && (
-                  <div style={{
-                    padding: "1rem",
-                    backgroundColor: "#fecaca",
-                    color: "#dc2626",
-                    borderRadius: "4px",
-                    marginBottom: "1.5rem",
-                    fontSize: "0.9rem"
-                  }}>
-                    {error}
-                  </div>
-                )}
+                {error && <FormError message={error} />}
 
-                {success && (
-                  <div style={{
-                    padding: "1rem",
-                    backgroundColor: "#dcfce7",
-                    color: "#16a34a",
-                    borderRadius: "4px",
-                    marginBottom: "1.5rem",
-                    fontSize: "0.9rem"
-                  }}>
-                    {success}
-                  </div>
-                )}
+                {success && <FormSuccess message={success} />}
 
                 <div style={{ marginBottom: "1.5rem" }}>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>
@@ -544,7 +517,9 @@ export default function ProfilePage() {
                   <input
                     type="tel"
                     value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
+                    onChange={(e) => setEditPhone(formatPhoneInput(e.target.value))}
+                    maxLength={17}
+                    placeholder="+38 0__ ___ __ __"
                     style={{
                       width: "100%",
                       padding: "0.75rem",

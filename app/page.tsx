@@ -15,6 +15,7 @@ import {
   filterLastNameInput,
   filterFirstNameInput
 } from "@/src/lib/validation";
+import { parseFullName, formatFullName } from "@/src/lib/nameHelper";
 import { useProducts } from "@/app/hooks/useProducts";
 import { useCart } from "@/app/hooks/useCart";
 import { Header } from "@/app/components/Header";
@@ -152,20 +153,7 @@ export default function Home() {
             .single();
 
           if (profileData) {
-            const fullNameParts = profileData.full_name ? profileData.full_name.trim().split(/\s+/) : [];
-            let firstName = "";
-            let patronymic = "";
-            let lastName = "";
-            
-            if (fullNameParts.length === 2) {
-              [firstName, lastName] = fullNameParts;
-            } else if (fullNameParts.length >= 3) {
-              firstName = fullNameParts[0];
-              patronymic = fullNameParts[1];
-              lastName = fullNameParts.slice(2).join(" ");
-            } else if (fullNameParts.length === 1) {
-              firstName = fullNameParts[0];
-            }
+            const { firstName, patronymic, lastName } = parseFullName(profileData.full_name || "");
             
             setRecipient((prev) => ({
               ...prev,
@@ -460,15 +448,9 @@ export default function Home() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session) {
-        alert("Будь ласка, авторизуйтеся перед оформленням замовлення");
-        router.push("/auth");
-        return;
-      }
-
       const orderData = {
-        user_id: session.user.id,
-        email: email || session.user.email,
+        user_id: session?.user.id || null,
+        email: email || session?.user.email || "",
         recipient: {
           firstName: recipient.firstName,
           lastName: recipient.lastName,
@@ -489,51 +471,61 @@ export default function Home() {
 
       const { data, error } = await supabase
         .from("order_history")
-        .insert([orderData])
-        .select();
+        .insert([orderData]);
 
       if (error) {
         console.error("Помилка збереження замовлення:", error);
-        alert("Помилка при оформленні замовлення. Спробуйте ще раз.");
+        console.error("Деталі помилки:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        alert(`Помилка при оформленні замовлення:\n${error.message || 'Спробуйте ще раз.'}`);
         return;
       }
 
-      // Обновляем профиль пользователя с данными из заказа
-      const fullName = `${recipient.firstName}${recipient.patronymic ? ' ' + recipient.patronymic : ''} ${recipient.lastName}`.trim();
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          full_name: fullName,
-          phone: recipient.phone
-        })
-        .eq("id", session.user.id);
+      // Обновляем профиль пользователя если зареєстрований
+      if (session?.user.id) {
+        const fullName = formatFullName(recipient.firstName, recipient.patronymic, recipient.lastName);
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({
+            first_name: recipient.firstName,
+            patronymic: recipient.patronymic || null,
+            last_name: recipient.lastName,
+            full_name: fullName,
+            phone: recipient.phone
+          })
+          .eq("id", session.user.id);
 
-      if (profileError) {
-        console.error("Помилка оновлення профілю:", profileError);
-        // Не прерываем процесс заказа если ошибка в профиле
+        if (profileError) {
+          console.error("Помилка оновлення профілю:", profileError);
+          // Не прерываем процесс заказа если ошибка в профиле
+        }
+
+        const productIds = cartItems.map((item) => item.id);
+        const { error: deleteError } = await supabase
+          .from("wishlist")
+          .delete()
+          .eq("user_id", session.user.id)
+          .in("product_id", productIds);
+
+        if (!deleteError) {
+          setWishlist((prev) => {
+            const newSet = new Set(prev);
+            productIds.forEach((id) => newSet.delete(id));
+            return newSet;
+          });
+        }
       }
 
-      const productIds = cartItems.map((item) => item.id);
-      const { error: deleteError } = await supabase
-        .from("wishlist")
-        .delete()
-        .eq("user_id", session.user.id)
-        .in("product_id", productIds);
-
-      if (!deleteError) {
-        setWishlist((prev) => {
-          const newSet = new Set(prev);
-          productIds.forEach((id) => newSet.delete(id));
-          return newSet;
-        });
-      }
-
-      console.log("Замовлення успішно збережено:", data);
+      console.log("Замовлення успішно збережено!");
       alert("Замовлення успішно оформлено!");
       
       setShowCart(false);
       clearCart();
-      setEmail(session.user.email || "");
+      setEmail(session?.user.email || "");
       setRecipient({ lastName: "", firstName: "", patronymic: "", phone: "+38 " });
       setErrors({ email: "", phone: "", lastName: "", firstName: "" });
     } catch (err) {

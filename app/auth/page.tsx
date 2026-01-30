@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { supabase } from "@/src/lib/supabase";
 import { useRouter } from "next/navigation";
+import { formatPhoneInput, validatePhone } from "@/src/lib/validation";
+import { formatFullName } from "@/src/lib/nameHelper";
+import { FormInput, FormError, FormSuccess } from "@/app/components/FormComponents";
+import { authInputStyle, authButtonStyle } from "@/src/lib/styles";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -19,7 +23,10 @@ export default function AuthPage() {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState("");
-  const [registerName, setRegisterName] = useState("");
+  const [registerFirstName, setRegisterFirstName] = useState("");
+  const [registerPatronymic, setRegisterPatronymic] = useState("");
+  const [registerLastName, setRegisterLastName] = useState("");
+  const [registerPhone, setRegisterPhone] = useState("+38 ");
 
   // Демо вход
   const handleDemoLogin = async () => {
@@ -37,6 +44,7 @@ export default function AuthPage() {
         router.push("/profile");
       }
     } catch (err) {
+      console.error(err);
       setError("Помилка входу. Спробуйте пізніше.");
     } finally {
       setLoading(false);
@@ -67,6 +75,7 @@ export default function AuthPage() {
         router.push("/profile");
       }
     } catch (err) {
+      console.error(err);
       setError("Помилка входу. Спробуйте пізніше.");
     } finally {
       setLoading(false);
@@ -80,8 +89,14 @@ export default function AuthPage() {
     setError(null);
     setSuccess(null);
 
-    if (!registerEmail || !registerPassword || !registerName) {
-      setError("Заповніть усі поля");
+    if (!registerEmail || !registerPassword || !registerFirstName || !registerLastName || !registerPhone.trim()) {
+      setError("Заповніть усі обов'язкові поля");
+      setLoading(false);
+      return;
+    }
+
+    if (!validatePhone(registerPhone)) {
+      setError("Введіть дійсний номер мобільного телефону (мінімум 10 цифр)");
       setLoading(false);
       return;
     }
@@ -102,7 +117,14 @@ export default function AuthPage() {
       // Реєстрація
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: registerEmail,
-        password: registerPassword
+        password: registerPassword,
+        options: {
+          data: {
+            first_name: registerFirstName,
+            patronymic: registerPatronymic,
+            last_name: registerLastName
+          }
+        }
       });
 
       if (signUpError) {
@@ -112,36 +134,46 @@ export default function AuthPage() {
       }
 
       if (data.user) {
-        // Залогинимся новым пользователем перед добавлением профиля
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: registerEmail,
-          password: registerPassword
-        });
+        // Формуємо full_name з компонентів
+        const fullName = formatFullName(registerFirstName, registerPatronymic, registerLastName);
+        
+        console.log("Користувач створений:", data.user.id);
+        console.log("Full name для збереження:", fullName);
+        
+        // Додавання профілю
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .insert([{
+            id: data.user.id,
+            email: registerEmail,
+            first_name: registerFirstName,
+            patronymic: registerPatronymic || null,
+            last_name: registerLastName,
+            full_name: fullName,
+            phone: registerPhone,
+            created_at: new Date().toISOString()
+          }])
+          .select();
 
-        if (!signInError) {
-          // Додавання профілю
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .insert([{
-              id: data.user.id,
-              email: registerEmail,
-              full_name: registerName,
-              created_at: new Date().toISOString()
-            }]);
-
-          if (profileError) {
-            console.error("Помилка профілю:", profileError);
-          }
-
-          // Вихід після додавання профілю
-          await supabase.auth.signOut();
+        if (profileError) {
+          console.error("Помилка при збереженні профілю:", profileError);
+          console.error("Код помилки:", profileError.code);
+          console.error("Повідомлення:", profileError.message);
+          setError(`Помилка при збереженні профілю: ${profileError.message || 'Невідома помилка'}`);
+          setLoading(false);
+          return;
         }
+
+        console.log("Профіль успішно створений:", profileData);
 
         setSuccess("Реєстрація успішна! Ви можете увійти.");
         setRegisterEmail("");
         setRegisterPassword("");
         setRegisterPasswordConfirm("");
-        setRegisterName("");
+        setRegisterFirstName("");
+        setRegisterPatronymic("");
+        setRegisterLastName("");
+        setRegisterPhone("+38 ");
         
         setTimeout(() => {
           setActiveTab("login");
@@ -254,70 +286,31 @@ export default function AuthPage() {
         </div>
 
         {/* Повідомлення об помилках та успіху */}
-        {error && (
-          <div style={{
-            padding: "0.75rem",
-            backgroundColor: "#dc2626",
-            borderRadius: "4px",
-            marginBottom: "1rem",
-            fontSize: "0.9rem"
-          }}>
-            {error}
-          </div>
-        )}
-        {success && (
-          <div style={{
-            padding: "0.75rem",
-            backgroundColor: "#16a34a",
-            borderRadius: "4px",
-            marginBottom: "1rem",
-            fontSize: "0.9rem"
-          }}>
-            {success}
-          </div>
-        )}
+        {error && <FormError message={error} />}
+        {success && <FormSuccess message={success} />}
 
         {/* Вкладка Вход */}
         {activeTab === "login" && (
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <input
+            <FormInput
               type="email"
               placeholder="Email або номер мобільного"
               value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              style={{
-                padding: "0.75rem",
-                backgroundColor: "#3a3a3a",
-                border: "1px solid #444",
-                borderRadius: "4px",
-                color: "#fff",
-                fontSize: "1rem"
-              }}
+              onChange={setLoginEmail}
+              style={{...authInputStyle, color: "#fff"}}
             />
-            <input
+            <FormInput
               type="password"
               placeholder="Пароль"
               value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              style={{
-                padding: "0.75rem",
-                backgroundColor: "#3a3a3a",
-                border: "1px solid #444",
-                borderRadius: "4px",
-                color: "#fff",
-                fontSize: "1rem"
-              }}
+              onChange={setLoginPassword}
+              style={{...authInputStyle, color: "#fff"}}
             />
             <button
               type="submit"
               disabled={loading}
               style={{
-                padding: "0.75rem",
-                backgroundColor: "#ff6b35",
-                border: "none",
-                borderRadius: "4px",
-                color: "#fff",
-                fontSize: "1rem",
+                ...authButtonStyle,
                 cursor: loading ? "not-allowed" : "pointer",
                 opacity: loading ? 0.6 : 1
               }}
@@ -359,72 +352,62 @@ export default function AuthPage() {
         {/* Вкладка Регистрация */}
         {activeTab === "register" && (
           <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <input
+            <FormInput
               type="text"
-              placeholder="Ім'я"
-              value={registerName}
-              onChange={(e) => setRegisterName(e.target.value)}
-              style={{
-                padding: "0.75rem",
-                backgroundColor: "#3a3a3a",
-                border: "1px solid #444",
-                borderRadius: "4px",
-                color: "#fff",
-                fontSize: "1rem"
-              }}
+              placeholder="Ім'я *"
+              value={registerFirstName}
+              onChange={setRegisterFirstName}
+              style={{...authInputStyle, color: "#fff"}}
             />
-            <input
+            <FormInput
+              type="text"
+              placeholder="Отчество (по батькові)"
+              value={registerPatronymic}
+              onChange={setRegisterPatronymic}
+              style={{...authInputStyle, color: "#fff"}}
+            />
+            <FormInput
+              type="text"
+              placeholder="Прізвище *"
+              value={registerLastName}
+              onChange={setRegisterLastName}
+              style={{...authInputStyle, color: "#fff"}}
+            />
+            <FormInput
+              type="tel"
+              inputMode="numeric"
+              placeholder="Телефон +38 0__ ___ __ __ *"
+              value={registerPhone}
+              onChange={(v) => setRegisterPhone(formatPhoneInput(v))}
+              maxLength={17}
+              style={{...authInputStyle, color: "#fff"}}
+            />
+            <FormInput
               type="email"
-              placeholder="Email"
+              placeholder="Email *"
               value={registerEmail}
-              onChange={(e) => setRegisterEmail(e.target.value)}
-              style={{
-                padding: "0.75rem",
-                backgroundColor: "#3a3a3a",
-                border: "1px solid #444",
-                borderRadius: "4px",
-                color: "#fff",
-                fontSize: "1rem"
-              }}
+              onChange={setRegisterEmail}
+              style={{...authInputStyle, color: "#fff"}}
             />
-            <input
+            <FormInput
               type="password"
-              placeholder="Пароль"
+              placeholder="Пароль *"
               value={registerPassword}
-              onChange={(e) => setRegisterPassword(e.target.value)}
-              style={{
-                padding: "0.75rem",
-                backgroundColor: "#3a3a3a",
-                border: "1px solid #444",
-                borderRadius: "4px",
-                color: "#fff",
-                fontSize: "1rem"
-              }}
+              onChange={setRegisterPassword}
+              style={{...authInputStyle, color: "#fff"}}
             />
-            <input
+            <FormInput
               type="password"
-              placeholder="Підтвердіть пароль"
+              placeholder="Підтвердіть пароль *"
               value={registerPasswordConfirm}
-              onChange={(e) => setRegisterPasswordConfirm(e.target.value)}
-              style={{
-                padding: "0.75rem",
-                backgroundColor: "#3a3a3a",
-                border: "1px solid #444",
-                borderRadius: "4px",
-                color: "#fff",
-                fontSize: "1rem"
-              }}
+              onChange={setRegisterPasswordConfirm}
+              style={{...authInputStyle, color: "#fff"}}
             />
             <button
               type="submit"
               disabled={loading}
               style={{
-                padding: "0.75rem",
-                backgroundColor: "#ff6b35",
-                border: "none",
-                borderRadius: "4px",
-                color: "#fff",
-                fontSize: "1rem",
+                ...authButtonStyle,
                 cursor: loading ? "not-allowed" : "pointer",
                 opacity: loading ? 0.6 : 1
               }}

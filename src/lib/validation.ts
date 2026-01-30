@@ -27,13 +27,23 @@ export const formatPhoneInput = (value: string) => {
     return '+38 ';
   }
   
-  if (!value.startsWith('+38')) {
-    return value;
+  // Извлекаем только цифры
+  const digitsOnly = value.replace(/\D/g, '');
+  
+  // Если ввели меньше 2 цифр, возвращаем пустой формат
+  if (digitsOnly.length === 0) {
+    return '+38 ';
   }
   
-  const digitsOnly = value.replace(/\D/g, '');
+  // Обрезаем до максимум 12 цифр (+38 это 2 цифры, плюс 10 цифр номера = 12 всего)
   const limited = digitsOnly.slice(0, 12);
   
+  // Если ввели только 1-2 цифры (это код страны), добавляем их
+  if (limited.length <= 2) {
+    return '+38';
+  }
+  
+  // Форматируем номер
   let formatted = '+38';
   if (limited.length > 2) {
     formatted += ' ' + limited.slice(2, 5);
