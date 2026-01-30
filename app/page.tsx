@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase";
 import { 
   Product, 
-  applyFilters, 
   getAllAvailableSpecs
 } from "@/src/lib/filters";
 import { 
@@ -20,6 +19,7 @@ import { useProducts } from "@/app/hooks/useProducts";
 import { useCart } from "@/app/hooks/useCart";
 import { Header } from "@/app/components/Header";
 import { Sidebar } from "@/app/components/Sidebar";
+import { FilterModal } from "@/app/components/FilterModal";
 import { FilterBar } from "@/app/components/FilterBar";
 import { ProductGrid } from "@/app/components/ProductGrid";
 import { CartModal } from "@/app/components/CartModal";
@@ -46,6 +46,43 @@ interface FormErrors {
   firstName: string;
 }
 
+// Функция для применения фильтров по спецификациям
+function applySpecFilters(
+  products: Product[],
+  specFilters: { [key: string]: Set<string> }
+): Product[] {
+  if (Object.keys(specFilters).length === 0) {
+    return products;
+  }
+
+  return products.filter((product) => {
+    // Если specs это JSON объект, парси его
+    const productSpecs = typeof product.specs === 'string' 
+      ? JSON.parse(product.specs) 
+      : product.specs || {};
+
+    // Проверяем каждый активный фильтр
+    return Object.entries(specFilters).every(([specName, selectedValues]) => {
+      if (selectedValues.size === 0) return true;
+
+      // Получаем значение спеки из продукта
+      const specValue = productSpecs[specName];
+      
+      if (!specValue) return false;
+
+      // Если это массив (может быть), преобразуем в строку для сравнения
+      const specValueStr = Array.isArray(specValue) 
+        ? specValue.join(', ')
+        : String(specValue);
+
+      // Проверяем, содержится ли значение в выбранных
+      return Array.from(selectedValues).some(val => 
+        specValueStr.toLowerCase().includes(val.toLowerCase())
+      );
+    });
+  });
+}
+
 export default function Home() {
   const router = useRouter();
 
@@ -60,14 +97,12 @@ export default function Home() {
     totalPrice,
     totalItems
   } = useCart();
-
-  // State
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState<string | null>(null);
   const [subCategory, setSubCategory] = useState<string | null>(null);
   const [searchText, setSearchText] = useState<string>("");
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCart, setShowCart] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [paymentCategory, setPaymentCategory] = useState<string>("on_delivery");
@@ -80,7 +115,13 @@ export default function Home() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
   const [minPriceInput, setMinPriceInput] = useState<string>("0");
   const [maxPriceInput, setMaxPriceInput] = useState<string>("100000");
-  const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name" | "newest">("price-asc");
+  
+  // Убедимся что значения всегда определены
+  const safeMinPriceInput = minPriceInput ?? "0";
+  const safeMaxPriceInput = maxPriceInput ?? "100000";
+  const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name" | "newest">("newest");
+  const [specFilters, setSpecFilters] = useState<{ [key: string]: Set<string> }>({});
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [recipient, setRecipient] = useState<Recipient>({
     lastName: "",
     firstName: "",
@@ -111,10 +152,26 @@ export default function Home() {
             .single();
 
           if (profileData) {
+            const fullNameParts = profileData.full_name ? profileData.full_name.trim().split(/\s+/) : [];
+            let firstName = "";
+            let patronymic = "";
+            let lastName = "";
+            
+            if (fullNameParts.length === 2) {
+              [firstName, lastName] = fullNameParts;
+            } else if (fullNameParts.length >= 3) {
+              firstName = fullNameParts[0];
+              patronymic = fullNameParts[1];
+              lastName = fullNameParts.slice(2).join(" ");
+            } else if (fullNameParts.length === 1) {
+              firstName = fullNameParts[0];
+            }
+            
             setRecipient((prev) => ({
               ...prev,
-              firstName: profileData.full_name?.split(" ")[0] || "",
-              lastName: profileData.full_name?.split(" ").slice(1).join(" ") || "",
+              firstName: firstName || "",
+              patronymic: patronymic || "",
+              lastName: lastName || "",
               phone: profileData.phone || "+38 "
             }));
           }
@@ -143,11 +200,35 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [searchText]);
 
-  // ИСПРАВЛЕНО: Правильне застосування фільтрів
+  // Применение всех фильтров: цена, сортировка, спеки
   useEffect(() => {
-    const filtered = applyFilters(products, priceRange, {}, sortBy);
+    if (products.length === 0) {
+      setFilteredProducts([]);
+      return;
+    }
+
+    // Начинаем с исходных продуктов
+    let filtered = [...products];
+
+    // Применяем фильтр по цене
+    filtered = filtered.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
+
+    // Применяем фильтры по спецификациям
+    filtered = applySpecFilters(filtered, specFilters);
+
+    // Применяем сортировку
+    if (sortBy === "price-asc") {
+      filtered.sort((a, b) => a.price - b.price);
+    } else if (sortBy === "price-desc") {
+      filtered.sort((a, b) => b.price - a.price);
+    } else if (sortBy === "name") {
+      filtered.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortBy === "newest") {
+      filtered.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    }
+
     setFilteredProducts(filtered);
-  }, [products, priceRange, sortBy]);
+  }, [products, priceRange, sortBy, specFilters]);
 
   useEffect(() => {
     if (!debouncedSearchText) {
@@ -169,10 +250,18 @@ export default function Home() {
   }, [category, products]);
 
   const availableSpecs = useMemo(() => {
-    return getAllAvailableSpecs(filteredProducts);
-  }, [filteredProducts]);
+    const specs = getAllAvailableSpecs(products);
+    // Конвертуємо масиви в Sets щоб збігалися з типом FilterModal
+    const specsAsSet: { [key: string]: Set<string> } = {};
+    
+    Object.entries(specs).forEach(([key, values]) => {
+      specsAsSet[key] = new Set(values);
+    });
+    
+    return specsAsSet;
+  }, [products]);
 
-  const hasActiveFilters = !!(category || priceRange[0] > 0 || priceRange[1] < 100000 || sortBy !== "price-asc");
+  const hasActiveFilters = !!(category || priceRange[0] > 0 || priceRange[1] < 100000 || sortBy !== "newest" || Object.keys(specFilters).length > 0);
 
   // Обробники
   const handleSearch = useCallback(() => {
@@ -205,6 +294,21 @@ export default function Home() {
     setFilteredProducts(products.filter((p) => p.category === cat && p.brand === sub));
   }, [products]);
 
+  const handleSpecFilterChange = useCallback((specName: string, value: string, checked: boolean) => {
+    setSpecFilters((prev) => {
+      const newFilters = { ...prev };
+      if (!newFilters[specName]) {
+        newFilters[specName] = new Set();
+      }
+      if (checked) {
+        newFilters[specName].add(value);
+      } else {
+        newFilters[specName].delete(value);
+      }
+      return newFilters;
+    });
+  }, []);
+
   const resetFilters = useCallback(() => {
     setCategory(null);
     setSubCategory(null);
@@ -214,7 +318,8 @@ export default function Home() {
     setPriceRange([0, 100000]);
     setMinPriceInput("0");
     setMaxPriceInput("100000");
-    setSortBy("price-asc");
+    setSortBy("newest");
+    setSpecFilters({});
   }, [products]);
 
   const handleImageError = (productId: string) => {
@@ -263,11 +368,6 @@ export default function Home() {
       console.error("Помилка при роботі зі списком бажань:", err);
     }
   }, [user, wishlist, router]);
-
-  const handleQuickView = (e: React.MouseEvent, product: Product) => {
-    e.stopPropagation();
-    setSelectedProduct(product as ProductDetail);
-  };
 
   const handleProfileClick = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -398,6 +498,21 @@ export default function Home() {
         return;
       }
 
+      // Обновляем профиль пользователя с данными из заказа
+      const fullName = `${recipient.firstName}${recipient.patronymic ? ' ' + recipient.patronymic : ''} ${recipient.lastName}`.trim();
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          full_name: fullName,
+          phone: recipient.phone
+        })
+        .eq("id", session.user.id);
+
+      if (profileError) {
+        console.error("Помилка оновлення профілю:", profileError);
+        // Не прерываем процесс заказа если ошибка в профиле
+      }
+
       const productIds = cartItems.map((item) => item.id);
       const { error: deleteError } = await supabase
         .from("wishlist")
@@ -449,18 +564,38 @@ export default function Home() {
         onResetFilters={resetFilters}
       />
 
-      {/* Фільтр бар сверху */}
+      {/* Фільтр бар */}
       <FilterBar
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        onFilterClick={() => setShowFilters(true)}
+        priceRange={priceRange}
+        hasActiveFilters={hasActiveFilters}
+        minPriceInput={safeMinPriceInput}
+        maxPriceInput={safeMaxPriceInput}
+        onPriceChange={(min: number, max: number) => setPriceRange([min, max])}
+        onMinPriceInputChange={setMinPriceInput}
+        onMaxPriceInputChange={setMaxPriceInput}
+        onResetFilters={resetFilters}
+      />
+
+      {/* Фільтр модал */}
+      <FilterModal
+        isOpen={showFilters}
         priceRange={priceRange}
         minPriceInput={minPriceInput}
         maxPriceInput={maxPriceInput}
         sortBy={sortBy}
+        specFilters={specFilters}
+        availableSpecs={availableSpecs}
         onPriceChange={(min: number, max: number) => setPriceRange([min, max])}
         onMinPriceInputChange={setMinPriceInput}
         onMaxPriceInputChange={setMaxPriceInput}
         onSortChange={setSortBy}
+        onSpecFilterChange={handleSpecFilterChange}
         hasActiveFilters={hasActiveFilters}
         onResetFilters={resetFilters}
+        onClose={() => setShowFilters(false)}
       />
 
       {/* Основна сітка: категорії слева, товари справа */}

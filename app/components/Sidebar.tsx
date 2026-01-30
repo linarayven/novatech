@@ -6,18 +6,17 @@ import Image from "next/image";
 
 // Маппинг иконок для категорий
 const CATEGORY_ICONS: { [key: string]: string } = {
-  'Ноутбуки': '/icons/computer.svg',
+  'Ноутбуки': '/icons/laptop.svg',
   'Смартфоны': '/icons/iphone.svg',
-  'Наушники': '/icons/headphones.svg',
-  'Фотокамеры': '/icons/camera.svg',
-  'Телефони': '/icons/iphone.svg',
-  'Телевизори': '/icons/tv.svg',
-  'Планшети': '/icons/tablet.svg',
-  'Аксессуари': '/icons/shopping-cart.svg',
+  'Телевізори': '/icons/tv.svg',
+  'Периферія': '/icons/gamepad.svg',
   'Монітори': '/icons/computer.svg',
+  'Аксесуари': '/icons/headphones2.svg',
+  'Планшети': '/icons/tablet.svg',
+  'Наушники': '/icons/headphones.svg',
+  'Телефони': '/icons/iphone.svg',
   'Ігрові консолі': '/icons/gamepad.svg',
-  'Кабелі': '/icons/headphones.svg',
-  'Музика': '/icons/music.svg',
+  'Фотокамеры': '/icons/computer.svg',
 };
 
 interface SidebarProps {
@@ -54,7 +53,7 @@ export function Sidebar({
 
   return (
     <aside style={{
-      width: '16rem',
+      width: '280px',
       flexShrink: 0,
       maxHeight: '90vh',
       overflowY: 'auto',

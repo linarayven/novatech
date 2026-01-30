@@ -112,15 +112,29 @@ export default function AuthPage() {
       }
 
       if (data.user) {
-        // Додавання профілю
-        const { error: profileError } = await supabase.from("profiles").insert({
-          id: data.user.id,
+        // Залогинимся новым пользователем перед добавлением профиля
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email: registerEmail,
-          full_name: registerName
+          password: registerPassword
         });
 
-        if (profileError) {
-          console.error("Помилка при створенні профілю:", profileError);
+        if (!signInError) {
+          // Додавання профілю
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .insert([{
+              id: data.user.id,
+              email: registerEmail,
+              full_name: registerName,
+              created_at: new Date().toISOString()
+            }]);
+
+          if (profileError) {
+            console.error("Помилка профілю:", profileError);
+          }
+
+          // Вихід після додавання профілю
+          await supabase.auth.signOut();
         }
 
         setSuccess("Реєстрація успішна! Ви можете увійти.");
@@ -134,6 +148,7 @@ export default function AuthPage() {
         }, 1500);
       }
     } catch (err) {
+      console.error("Помилка реєстрації:", err);
       setError("Помилка реєстрації. Спробуйте пізніше.");
     } finally {
       setLoading(false);
