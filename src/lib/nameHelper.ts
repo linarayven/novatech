@@ -1,4 +1,4 @@
-// Утилиты для работы с именами
+// Утиліти для роботи з іменами
 export const formatFullName = (firstName: string, patronymic: string | null | undefined, lastName: string): string => {
   return `${firstName}${patronymic ? ' ' + patronymic : ''} ${lastName}`.trim();
 };

@@ -65,7 +65,7 @@ export function ProductGrid({
           {/* Контейнер изображения */}
           <div style={{
             width: '100%',
-            height: '200px',
+            height: '180px',
             backgroundColor: '#f5f5f5',
             overflow: 'hidden',
             position: 'relative'
@@ -112,12 +112,13 @@ export function ProductGrid({
                 src={product.image_url}
                 alt={product.title}
                 width={300}
-                height={200}
+                height={180}
                 onError={() => onImageError(product.id)}
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover'
+                  objectFit: 'contain',
+                  backgroundColor: '#fff'
                 }}
               />
             ) : (

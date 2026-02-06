@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase";
 import { 
   Product, 
-  getAllAvailableSpecs
+  getAllAvailableSpecs,
+  applyFilters
 } from "@/src/lib/filters";
 import { 
   validateEmail, 
@@ -47,42 +48,8 @@ interface FormErrors {
   firstName: string;
 }
 
-// Функция для применения фильтров по спецификациям
-function applySpecFilters(
-  products: Product[],
-  specFilters: { [key: string]: Set<string> }
-): Product[] {
-  if (Object.keys(specFilters).length === 0) {
-    return products;
-  }
-
-  return products.filter((product) => {
-    // Если specs это JSON объект, парси его
-    const productSpecs = typeof product.specs === 'string' 
-      ? JSON.parse(product.specs) 
-      : product.specs || {};
-
-    // Проверяем каждый активный фильтр
-    return Object.entries(specFilters).every(([specName, selectedValues]) => {
-      if (selectedValues.size === 0) return true;
-
-      // Получаем значение спеки из продукта
-      const specValue = productSpecs[specName];
-      
-      if (!specValue) return false;
-
-      // Если это массив (может быть), преобразуем в строку для сравнения
-      const specValueStr = Array.isArray(specValue) 
-        ? specValue.join(', ')
-        : String(specValue);
-
-      // Проверяем, содержится ли значение в выбранных
-      return Array.from(selectedValues).some(val => 
-        specValueStr.toLowerCase().includes(val.toLowerCase())
-      );
-    });
-  });
-}
+// Используем централизованные фильтры из src/lib/filters для корректной
+// нормалізації та розділення специфікацій (RAM vs Storage і т.д.).
 
 export default function Home() {
   const router = useRouter();
@@ -195,29 +162,11 @@ export default function Home() {
       return;
     }
 
-    // Начинаем с исходных продуктов
-    let filtered = [...products];
-
-    // Применяем фильтр по цене
-    filtered = filtered.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
-
-    // Применяем фильтры по спецификациям
-    filtered = applySpecFilters(filtered, specFilters);
-
-    // Применяем сортировку
-    if (sortBy === "price-asc") {
-      filtered.sort((a, b) => a.price - b.price);
-    } else if (sortBy === "price-desc") {
-      filtered.sort((a, b) => b.price - a.price);
-    } else if (sortBy === "name") {
-      filtered.sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortBy === "newest") {
-      filtered.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-    }
-
-    setFilteredProducts(filtered);
-  }, [products, priceRange, sortBy, specFilters]);
-
+    // Переходим на централізований applyFilters — воно застосує фільтр
+    // за категорією, ціною, специфікаціями та сортуванням у правильному порядку
+    const result = applyFilters(products, priceRange, specFilters, sortBy, category, subCategory);
+    setFilteredProducts(result);
+  }, [products, priceRange, sortBy, specFilters, category, subCategory]);
   useEffect(() => {
     if (!debouncedSearchText) {
       setSuggestions([]);
@@ -238,7 +187,7 @@ export default function Home() {
   }, [category, products]);
 
   const availableSpecs = useMemo(() => {
-    const specs = getAllAvailableSpecs(products);
+    const specs = getAllAvailableSpecs(products, category, subCategory);
     // Конвертуємо масиви в Sets щоб збігалися з типом FilterModal
     const specsAsSet: { [key: string]: Set<string> } = {};
     
@@ -247,7 +196,7 @@ export default function Home() {
     });
     
     return specsAsSet;
-  }, [products]);
+  }, [products, category, subCategory]);
 
   const hasActiveFilters = !!(category || priceRange[0] > 0 || priceRange[1] < 100000 || sortBy !== "newest" || Object.keys(specFilters).length > 0);
 
@@ -274,11 +223,13 @@ export default function Home() {
   const handleCategoryFilter = useCallback((cat: string) => {
     setCategory(cat);
     setSubCategory(null);
+    setSpecFilters({}); // Очищаем старые фильтры при смене категории
     setFilteredProducts(products.filter((p) => p.category === cat));
   }, [products]);
 
   const handleSubCategoryFilter = useCallback((sub: string, cat: string) => {
     setSubCategory(sub);
+    setSpecFilters({}); // Очищаем старые фильтры при смене подкатегории
     setFilteredProducts(products.filter((p) => p.category === cat && p.brand === sub));
   }, [products]);
 

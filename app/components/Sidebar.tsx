@@ -133,7 +133,7 @@ export function Sidebar({
           fontWeight: '700',
           letterSpacing: '0.5px'
         }}>
-          Категории
+          Категорії
         </h3>
       </div>
 

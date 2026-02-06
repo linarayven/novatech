@@ -1,4 +1,4 @@
-// Переиспользуемые стили компонентов
+// Стилі компонентів
 
 export const authInputStyle = {
   padding: "0.75rem",
