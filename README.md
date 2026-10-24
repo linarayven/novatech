@@ -1,30 +1,105 @@
 # NovaTech
 
-NovaTech is an online electronics store built as a practice project with Next.js and React. Users can browse a product catalog, search and filter it, save items to a wishlist, manage a cart and check out. Product, user and order data is stored in Supabase (PostgreSQL).
+NovaTech is an online electronics store built with Next.js, React and TypeScript, with Supabase (PostgreSQL) as the backend. Visitors can browse a catalog, search and filter products by detailed specifications, keep a wishlist, and place orders with or without an account.
+
+It was developed as a pre-graduation internship project and covers the full cycle: requirements, UI design, database design, implementation and deployment on Vercel.
 
 ## Features
 
-- Product catalog with category and brand filtering and price controls
-- Search with suggestions
-- Product detail overlays
-- Cart with quantity updates
-- Wishlist for authenticated users
-- Checkout form validation (email, phone, recipient details)
-- User authentication and profile pages
+- **Catalog** loaded from Supabase, with sorting by price, name or newest
+- **Filtering** by category, subcategory, brand, price range and technical specifications (RAM, storage, screen size, processor, GPU, panel type, resolution, battery, refresh rate)
+- **Search** with a 300 ms debounce and autocomplete suggestions
+- **Product details** in a modal window
+- **Cart** with quantity changes and automatic totals
+- **Checkout** with validation of email, recipient details and phone number, and three payment options: cash on delivery, online card (Card, Google Pay, Apple Pay) and installments
+- **Guest orders**: checkout works without registration
+- **Authentication** with Supabase Auth (JWT), with an extended profile (full name, phone)
+- **Profile page** with three tabs: Profile, Orders (order history) and Wishlist
+- **Wishlist** stored in the database; purchased items are removed from it after an order
+- **Responsive UI** with light and dark themes
 
 ## Tech stack
 
-- [Next.js](https://nextjs.org/) 16 (App Router)
-- [React](https://react.dev/) 19
-- [TypeScript](https://www.typescriptlang.org/) 5
-- [Supabase](https://supabase.com/) for the database, authentication and sessions
-- [Tailwind CSS](https://tailwindcss.com/) 4 with PostCSS
-- [ESLint](https://eslint.org/) 9
-- [Geist](https://fonts.google.com/specimen/Geist) and [Geist Mono](https://fonts.google.com/specimen/Geist_Mono) fonts via `next/font`
+| Area | Technology |
+|---|---|
+| Framework | [Next.js](https://nextjs.org/) 16.1.4 (App Router) |
+| UI | [React](https://react.dev/) 19.2.3 |
+| Language | [TypeScript](https://www.typescriptlang.org/) 5 |
+| Backend | [Supabase](https://supabase.com/): PostgreSQL, Auth, Row Level Security |
+| Styling | [Tailwind CSS](https://tailwindcss.com/) 4 |
+| Linting | [ESLint](https://eslint.org/) 9 |
+| Hosting | [Vercel](https://vercel.com/) |
+| Version control | Git and GitHub |
 
-## Backend (Supabase)
+## Architecture
 
-The backend is a Supabase project with SQL tables for the store data. The frontend talks to it through the client in `src/lib/supabase.ts`. The SQL schema is not included in this repository.
+NovaTech works as a single page application: after the first load, filtering, search and cart changes update the page without a full reload. The backend follows the Backend-as-a-Service model, and the frontend talks to Supabase through the client in `src/lib/supabase.ts`.
+
+### Pages
+
+| Route | Description |
+|---|---|
+| `/` (`app/page.tsx`) | Catalog. Holds the central state: products, cart, categories, price range, spec filters, sort order, search text, session user and wishlist |
+| `/auth` | Sign in and registration. A `profiles` row is created automatically on sign-up |
+| `/profile` | Profile editing, order history and wishlist. Redirects to `/auth` if there is no session |
+
+### Components (`app/components`)
+
+`Header` (search, cart, profile), `Sidebar` (category navigation), `ProductGrid`, `ProductDetailsModal`, `CartModal` (checkout), `FilterBar` (quick sorting), `FilterModal` (advanced filters) and `FormComponents` (reusable form elements).
+
+### Hooks (`app/hooks`)
+
+- `useProducts()` loads products from the `products` table
+- `useCart()` adds, removes and changes the quantity of cart items
+
+The wishlist is kept in the state of the main page and synchronized with the `wishlist` table (INSERT and DELETE).
+
+### Filtering logic (`src/lib/filters.ts`)
+
+Product specs are stored as JSON and normalized before they are compared:
+
+- extra spaces are removed (`256 GB` becomes `256GB`)
+- localized units are converted (`ГБ` becomes `GB`, `ТБ` becomes `TB`)
+- storage type is detected automatically (`256GB` becomes `256GB SSD`)
+
+The module also builds the list of available specs per category, applies multi-criteria filtering (price, category, brand, specs) and sorts sizes in correct numeric order. When the category or brand changes, previously selected spec filters are cleared.
+
+### Validation (`src/lib/validation.ts`)
+
+- email check with regular expressions
+- phone check (at least 10 digits) and formatting to `+38 0XX XXX XX XX`, used on the checkout, registration and profile forms
+- sanitizing of first and last name input
+- locale-aware price formatting
+
+`validateForm()` runs before an order is placed.
+
+### Styling
+
+Tailwind CSS plus `app/globals.css` for global styles and animations, and a `styles.ts` helper with shared form styles. The theme uses CSS variables for light and dark mode, with red (`#E31E25`) as the primary color.
+
+## Database (Supabase)
+
+| Table | Purpose |
+|---|---|
+| `products` | Product catalog |
+| `profiles` | User data (separate columns for first name, patronymic, last name, plus phone) |
+| `order_history` | Placed orders. `user_id` can be `NULL`, which allows guest orders |
+| `wishlist` | Saved products per user |
+| `categories` | Product categories |
+
+`products` columns: `id` (UUID, primary key), `title`, `price`, `category`, `sub_category`, `brand`, `description`, `image_url`, `specs` (JSON) and `created_at`.
+
+Row Level Security (RLS) limits users to their own records in `wishlist` and `order_history`. The SQL schema is not included in this repository.
+
+### Order flow
+
+1. Add products to the cart
+2. Fill in the recipient form (prefilled from the profile for signed-in users)
+3. Validate the data
+4. Save the order to `order_history`
+5. Update the user's profile
+6. Clear the cart
+7. Remove the purchased items from the wishlist
 
 ## Getting started
 
@@ -58,17 +133,17 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```text
 .
 ├── app/
-│   ├── auth/          # Authentication pages
-│   ├── components/    # Header, filters, product cards, cart modal
-│   ├── hooks/         # Cart, wishlist and product-loading logic
-│   ├── profile/       # User profile pages
+│   ├── auth/          # Sign in and registration page
+│   ├── components/    # Header, Sidebar, ProductGrid, modals, filters, form components
+│   ├── hooks/         # useProducts, useCart
+│   ├── profile/       # Profile, orders and wishlist page
 │   ├── globals.css
 │   ├── layout.tsx
-│   └── page.tsx       # Main storefront page
+│   └── page.tsx       # Catalog page and central state
 ├── public/
 │   └── icons/         # Category icons (SVG)
 ├── src/
-│   └── lib/           # Filtering, validation, Supabase client
+│   └── lib/           # filters.ts, validation.ts, supabase.ts
 ├── eslint.config.mjs
 ├── next.config.ts
 ├── postcss.config.mjs
@@ -76,14 +151,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 └── package.json
 ```
 
-## Implementation notes
-
-- **Spec normalization.** `src/lib/filters.ts` normalizes values such as RAM and storage (`8GB`, `8 GB`, `256GB SSD`) so equivalent specs compare consistently in filters.
-- **Debounced search.** The search box in `app/page.tsx` waits briefly before updating suggestions, so the list is not recalculated on every keystroke. See [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout) and [`useEffect`](https://react.dev/reference/react/useEffect).
-- **Input sanitizing.** `src/lib/validation.ts` strips invalid characters and formats phone numbers in the Ukrainian pattern before checkout.
-- **Functional state updates.** `app/hooks/useCart.ts` updates the cart from the previous state, which avoids stale values when items are added or removed quickly. See [updating state](https://react.dev/learn/updating-state).
-- **CSS transitions.** Cart and modal animations in `app/globals.css` use [`@keyframes`](https://developer.mozilla.org/en-US/docs/Web/CSS/@keyframes) and [`transform`](https://developer.mozilla.org/en-US/docs/Web/CSS/transform) instead of an animation library.
-
 ## Screenshots
 
-<!-- Add screenshots here -->
+<!-- Add screenshots here: catalog, filters, cart and checkout, profile -->
