@@ -1,157 +1,89 @@
 # NovaTech
 
-NovaTech is an online electronics store built as a practice project with Next.js and React. It presents a product catalog, allows search and filtering, supports wishlist and cart flows, and includes checkout form validation and profile-aware behavior through Supabase. The project is structured as a realistic storefront demo with a modern frontend stack and production-friendly patterns.
+NovaTech is an online electronics store built as a practice project with Next.js and React. Users can browse a product catalog, search and filter it, save items to a wishlist, manage a cart and check out. Product, user and order data is stored in Supabase (PostgreSQL).
 
-## What the project does
+## Features
 
-This project is a storefront application for browsing and purchasing electronics. The main storefront experience is assembled in [app/page.tsx](app/page.tsx), with reusable UI in [app/components](app/components), shared logic in [src/lib](src/lib), and external data access in [src/lib/supabase.ts](src/lib/supabase.ts).
-
-The app includes:
-- product browsing with category and brand filtering
-- search suggestions and price controls
-- product detail overlays
-- cart management with quantity updates
-- wishlist support for authenticated users
-- checkout validation for email, phone, and recipient details
-
-## Why it is useful
-
-NovaTech is useful as a practical example of a modern ecommerce frontend. It demonstrates how to structure a product catalog, manage UI state across a shopping flow, normalize domain data for filtering, and connect the client to a real backend service.
-
-It is especially relevant for developers who want to study:
-- state-driven storefront architecture
-- reusable component composition
-- normalization of product metadata
-- client-side validation and user data handling
-- integration with a data layer using Supabase
+- Product catalog with category and brand filtering and price controls
+- Search with suggestions
+- Product detail overlays
+- Cart with quantity updates
+- Wishlist for authenticated users
+- Checkout form validation (email, phone, recipient details)
+- User authentication and profile pages
 
 ## Tech stack
 
-- [Next.js](https://nextjs.org/) — App Router and frontend framework
-- [React](https://react.dev/) — component-driven UI
-- [TypeScript](https://www.typescriptlang.org/) — static typing
-- [Supabase](https://supabase.com/) — authentication, session access, and data storage
-- [Tailwind CSS](https://tailwindcss.com/) — styling
-- [PostCSS](https://postcss.org/) — CSS processing pipeline
-- [ESLint](https://eslint.org/) — linting and code quality
-- [Geist](https://fonts.google.com/specimen/Geist) and [Geist Mono](https://fonts.google.com/specimen/Geist_Mono) — font families loaded through Next.js
+- [Next.js](https://nextjs.org/) 16 (App Router)
+- [React](https://react.dev/) 19
+- [TypeScript](https://www.typescriptlang.org/) 5
+- [Supabase](https://supabase.com/) for the database, authentication and sessions
+- [Tailwind CSS](https://tailwindcss.com/) 4 with PostCSS
+- [ESLint](https://eslint.org/) 9
+- [Geist](https://fonts.google.com/specimen/Geist) and [Geist Mono](https://fonts.google.com/specimen/Geist_Mono) fonts via `next/font`
 
-## Interesting techniques used
+## Backend (Supabase)
 
-- Product normalization for reliable filtering
-  The product specs logic in [src/lib/filters.ts](src/lib/filters.ts) normalizes amount and unit strings such as RAM and storage sizes so values are compared consistently. This avoids mismatches caused by formatting differences such as `8GB`, `8 GB`, or `256GB SSD`.
-  - [MDN: Array.prototype.filter()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter)
-  - [MDN: Set](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set)
-
-- Debounced search suggestions
-  The search box in [app/page.tsx](app/page.tsx) waits briefly before updating suggestions, which reduces unnecessary processing while typing and keeps the UI responsive.
-  - [MDN: setTimeout()](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout)
-  - [MDN: useEffect](https://developer.mozilla.org/en-US/docs/React/Reference/React/useEffect)
-
-- Sanitized user input
-  The validation layer in [src/lib/validation.ts](src/lib/validation.ts) strips invalid characters and formats phone numbers into a consistent pattern before checkout. This is helpful in ecommerce flows where form correctness matters.
-  - [MDN: String.prototype.replace()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace)
-  - [MDN: RegExp](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp)
-
-- Functional state updates for cart behavior
-  The cart logic in [app/hooks/useCart.ts](app/hooks/useCart.ts) updates state based on the previous value, which helps avoid stale-state bugs when items are added or removed in quick succession.
-  - [React: Updating state](https://react.dev/learn/updating-state)
-
-- CSS-driven motion
-  The UI styling in [app/globals.css](app/globals.css) uses transforms and animations to provide modal and cart transitions without introducing a heavy animation library.
-  - [MDN: @keyframes](https://developer.mozilla.org/en-US/docs/Web/CSS/@keyframes)
-  - [MDN: transform](https://developer.mozilla.org/en-US/docs/Web/CSS/transform)
-
-## Notable technologies and libraries
-
-- [Next.js](https://nextjs.org/) — application framework and routing
-- [React](https://react.dev/) — UI composition and state management
-- [TypeScript](https://www.typescriptlang.org/) — type-safe frontend logic
-- [Supabase](https://supabase.com/) — session management and database access
-- [Tailwind CSS](https://tailwindcss.com/) — utility-first styling
-- [PostCSS](https://postcss.org/) — CSS processing
-- [ESLint](https://eslint.org/) — linting and static code quality
-- [Geist](https://fonts.google.com/specimen/Geist) — main brand/UI font
-- [Geist Mono](https://fonts.google.com/specimen/Geist_Mono) — monospace font
-
-## Project structure
-
-```text
-.
-├── app/
-│   ├── auth/
-│   ├── components/
-│   ├── hooks/
-│   ├── profile/
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx
-├── public/
-│   └── icons/
-├── src/
-│   └── lib/
-├── .gitignore
-├── eslint.config.mjs
-├── next.config.ts
-├── package.json
-├── postcss.config.mjs
-├── README.md
-├── tsconfig.json
-├── package-lock.json
-└── .next/ (generated locally)
-```
-
-- `app/` contains the storefront pages, layout, shared components, and stateful page logic.
-- `app/components/` holds reusable elements such as the header, filters, cart modal, and product cards.
-- `app/hooks/` centralizes cart, wishlist, and product-loading behaviors.
-- `app/auth/` and `app/profile/` handle user access and profile-related flows.
-- `public/icons/` stores the storefront SVG assets.
-- `src/lib/` contains shared logic for filtering, validation, and Supabase integration.
+The backend is a Supabase project with SQL tables for the store data. The frontend talks to it through the client in `src/lib/supabase.ts`. The SQL schema is not included in this repository.
 
 ## Getting started
 
-Requirements:
-- Node.js 18+
-- npm
-
-Install dependencies:
+Requirements: Node.js 20.9 or newer and npm.
 
 ```bash
 npm install
-```
-
-Start the development server:
-
-```bash
 npm run dev
 ```
 
-Then open:
-
-```text
-http://localhost:3000
-```
-
-Useful scripts:
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 | Command | Description |
-| --- | --- |
-| `npm run dev` | Starts the development server |
-| `npm run build` | Builds the project for production |
-| `npm run start` | Runs the production build |
-| `npm run lint` | Runs ESLint |
+|---|---|
+| `npm run dev` | Start the development server |
+| `npm run build` | Create a production build |
+| `npm run start` | Run the production build |
+| `npm run lint` | Run ESLint |
 
 ### Environment variables
 
-This project uses Supabase. Add the following values to a `.env.local` file:
+Create a `.env.local` file in the project root with the values from your Supabase project:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-The client is created in [src/lib/supabase.ts](src/lib/supabase.ts).
+## Project structure
 
-## Summary
+```text
+.
+├── app/
+│   ├── auth/          # Authentication pages
+│   ├── components/    # Header, filters, product cards, cart modal
+│   ├── hooks/         # Cart, wishlist and product-loading logic
+│   ├── profile/       # User profile pages
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx       # Main storefront page
+├── public/
+│   └── icons/         # Category icons (SVG)
+├── src/
+│   └── lib/           # Filtering, validation, Supabase client
+├── eslint.config.mjs
+├── next.config.ts
+├── postcss.config.mjs
+├── tsconfig.json
+└── package.json
+```
 
-NovaTech is a compact but realistic ecommerce storefront built with a modern React stack. It is a strong example of how to combine product filtering, form validation, state management, and external data access in a single frontend experience.
+## Implementation notes
+
+- **Spec normalization.** `src/lib/filters.ts` normalizes values such as RAM and storage (`8GB`, `8 GB`, `256GB SSD`) so equivalent specs compare consistently in filters.
+- **Debounced search.** The search box in `app/page.tsx` waits briefly before updating suggestions, so the list is not recalculated on every keystroke. See [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout) and [`useEffect`](https://react.dev/reference/react/useEffect).
+- **Input sanitizing.** `src/lib/validation.ts` strips invalid characters and formats phone numbers in the Ukrainian pattern before checkout.
+- **Functional state updates.** `app/hooks/useCart.ts` updates the cart from the previous state, which avoids stale values when items are added or removed quickly. See [updating state](https://react.dev/learn/updating-state).
+- **CSS transitions.** Cart and modal animations in `app/globals.css` use [`@keyframes`](https://developer.mozilla.org/en-US/docs/Web/CSS/@keyframes) and [`transform`](https://developer.mozilla.org/en-US/docs/Web/CSS/transform) instead of an animation library.
+
+## Screenshots
+
+<!-- Add screenshots here -->
